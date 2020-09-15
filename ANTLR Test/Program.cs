@@ -23,6 +23,10 @@ namespace ANTLR_Test
             Console.WriteLine(context.ToInfoString(spreadsheetParser));
 
             Console.WriteLine(visitor.Visit(context));
+            foreach(var value in visitor.Repository.Cells)
+            {
+                Console.WriteLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.ToString()}");
+            }
             Console.ReadLine();
         }
     }

@@ -5,18 +5,18 @@ grammar Spreadsheet;
  */
 
 spreadSheet
-	:	stm+ EOF
+	:	statements=stm+
 	;
 
 stm
 	: ';'															#emptyStm
-	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellStm
-	| 'C[' left=exp '|' right=exp ']' '"' '=' content=exp '"'		#cellEqStm
+	| 'C[' left=exp '|' right=exp ']' '=' content=exp ';'			#cellStm
+	| 'C[' left=exp '|' right=exp ']' '"' '=' content=exp '"' ';'	#cellEqStm
 	;
 
 
 exp
-	: value															#valueExp
+	: val=value														#valueExp
 	| 'C[' left=aexp ',' right=aexp ']'								#cellExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
@@ -59,6 +59,14 @@ aexp
 
 WS
 	:	' ' -> skip
+	;
+
+END
+	:	EOF -> skip
+	;
+
+NL
+	:	[\n\r] -> skip
 	;
 
 COMMENT
