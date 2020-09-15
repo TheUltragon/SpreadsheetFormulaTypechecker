@@ -9,11 +9,23 @@ using Antlr4.Runtime.Tree;
 namespace ANTLR_Test
 {
 
-    class SpreadsheetVisitor : SpreadsheetBaseVisitor<bool>
+    public class SpreadsheetVisitor : SpreadsheetBaseVisitor<bool>
     {
-        public DataRepository Repository = new DataRepository();
-        private VariableBase lastExpValue;
-        private VariableBase lastValue;
+        public DataRepository Repository { get; private set; }
+        public VariableBase LastExpValue { get; private set; }
+        public VariableBase LastValue { get; private set; }
+
+
+
+        public SpreadsheetVisitor()
+        {
+            Repository = new DataRepository();
+        }
+
+        public SpreadsheetVisitor(DataRepository repository)
+        {
+            Repository = repository;
+        }
 
         public override bool VisitSpreadSheet([NotNull] SpreadsheetParser.SpreadSheetContext context)
         {
@@ -31,11 +43,11 @@ namespace ANTLR_Test
         {
             Console.WriteLine("Visit CellStm");
             var leftResult = Visit(context.left);
-            var leftVal = lastExpValue;
+            var leftVal = LastExpValue;
             var rightResult = Visit(context.right);
-            var rightVal = lastExpValue;
+            var rightVal = LastExpValue;
             var contentResult = Visit(context.content);
-            var contentVal = lastExpValue;
+            var contentVal = LastExpValue;
             if(IntVariable.IsThis(leftVal) && IntVariable.IsThis(rightVal))
             {
                 int left = ((IntVariable)leftVal).Value;
@@ -54,27 +66,27 @@ namespace ANTLR_Test
         public override bool VisitValueExp([NotNull] SpreadsheetParser.ValueExpContext context)
         {
             var result = Visit(context.val);
-            lastExpValue = lastValue;
+            LastExpValue = LastValue;
             return result;
         }
 
         public override bool VisitCharVal([NotNull] SpreadsheetParser.CharValContext context)
         {
             char value = Char.Parse(context.CHAR().GetText());
-            lastValue = new CharVariable(value);
+            LastValue = new CharVariable(value);
             return true;
         }
 
         public override bool VisitIntVal([NotNull] SpreadsheetParser.IntValContext context)
         {
             int value = int.Parse(context.INT().GetText());
-            lastValue = new IntVariable(value);
+            LastValue = new IntVariable(value);
             return true;
         }
 
         public override bool VisitEmptyVal([NotNull] SpreadsheetParser.EmptyValContext context)
         {
-            lastValue = new EmptyVariable();
+            LastValue = new EmptyVariable();
             return true;
         }
     }

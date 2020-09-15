@@ -10,13 +10,19 @@ spreadSheet
 
 stm
 	: ';'															#emptyStm
-	| 'C[' left=exp '|' right=exp ']' '=' content=exp ';'			#cellStm
-	| 'C[' left=exp '|' right=exp ']' '"' '=' content=exp '"' ';'	#cellEqStm
+	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellStm
+	| 'C[' left=exp '|' right=exp ']' '"' '=' content=exp '"'		#cellEqStm
+	| type IDENT '=' exp											#assignStm
+	| 'eval'														#evalStm
+	| 'if' check=exp 'then' trueStm=stm 'else' falseStm=stm			#ifStm
+	| 'while' check=exp 'do' loopStm=stm							#whileStm
 	;
 
 
 exp
-	: val=value														#valueExp
+	: fun=fexp														#functionExp
+	| val=value														#valueExp
+	| IDENT															#varExp
 	| 'C[' left=aexp ',' right=aexp ']'								#cellExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
@@ -36,6 +42,44 @@ exp
 	| '!' param=exp													#notExp
 	;
 
+fexp
+	: 'IF' threeArg													#ifFunc
+	| 'ISBLANK' oneArg												#isblankFunc
+	| 'SUM' anyArg													#sumFunc
+	;
+
+oneArg
+	: '(' exp ')'
+	;
+
+twoArg
+	: '(' exp ',' exp ')'
+	;
+
+threeArg
+	: '(' exp ',' exp ',' exp ')'
+	;
+
+anyArg
+	: '(' exp (',' exp)* ')'
+	;
+
+aexp
+	: '+' param=exp													#posAExp
+	| '-' param=exp													#negAExp
+	| param=exp														#baseAExp
+	;
+
+type
+	: 'bool'														#boolTp
+	| 'char'														#charTp
+	| 'int'															#intTp
+	| 'decimal'														#decimalTp
+	| 'string'														#stringTp
+	| 'currency'													#currencyTp
+	| 'date'														#dateTp
+	;
+
 value
 	: 'true'														#trueVal
 	| 'false'														#falseVal
@@ -44,13 +88,11 @@ value
 	| DECIMAL														#decimalVal
 	| EMPTY															#emptyVal
 	| STRING														#stringVal
+	| DOLLARS														#dollarsVal
+	| EUROS															#eurosVal
+	| DATE															#dateVal
 	;
 
-aexp
-	: '+' param=exp													#posAExp
-	| '-' param=exp													#negAExp
-	| param=exp														#baseAExp
-	;
 
 
 /*
@@ -83,21 +125,41 @@ CHAR
 	: [a-zA-Z]
 	;
 
-NAME
+IDENT
     : [a-zA-Z_][a-zA-Z_0-9]*
     ;
 
 INT     
-	: [0-9]+
+	: [-+]?[0-9]+
 	;
 
 DECIMAL     
-	: [0-9]+ ([.,] [0-9]+)?
+	: [-+]?[0-9]+ [.,] [0-9]+
+	;
+
+EUROS
+	: NUMBER '€'
+	;
+
+DOLLARS
+	: NUMBER '$'
 	;
 
 STRING
     : '"' ( EscapeSequence | ~('\\'|'"') )* '"'
     ;
+
+DATE
+	: DATEBEGIN 'T' DATEEND
+	;
+
+DATEBEGIN
+	: NONFRACTPOSNUMBER '-' MONTHNUMBER '-' DAYNUMBER
+	;
+
+DATEEND
+	: TIMENUMBER ':' TIMENUMBER ':' TIMENUMBER
+	;
 
 fragment EscapeSequence
     : '\\' [abfnrtvz"'\\]
@@ -105,5 +167,25 @@ fragment EscapeSequence
 	;
 
 fragment NUMBER
+	: [-+]? POSNUMBER
+	;
+
+fragment POSNUMBER
+	: NONFRACTPOSNUMBER ([.,] [0-9]+)?
+	;
+
+fragment NONFRACTPOSNUMBER
 	: [1-9][0-9]*
+	;
+
+fragment MONTHNUMBER
+	: [01]?[0-9]
+	;
+
+fragment DAYNUMBER
+	: [0123]?[0-9]
+	;
+
+fragment TIMENUMBER
+	: [0-6]?[0-9]
 	;

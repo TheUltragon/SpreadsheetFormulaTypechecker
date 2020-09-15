@@ -78,25 +78,41 @@ namespace ANTLR_Test
         }
     }
 
-    public class CellCopyContent : VariableBase
+    public class ExpVariable : VariableBase
     {
-        private DataRepository repository;
+        private SpreadsheetVisitor _visitor;
+        private SpreadsheetParser.ExpContext _expression;
+        private VariableBase _value;
         public VariableBase Value
         {
             get
             {
-                return repository.GetCellContent(Cell);
+                if(_value == null)
+                {
+                    Eval();
+                }
+                return _value;
+            }
+            set
+            {
+                _value = value;
             }
         }
-        public Tuple<int, int> Cell { get; set; }
-        public CellCopyContent(DataRepository repo, Tuple<int, int> cell)
+
+        public void Eval()
         {
-            repository = repo;
-            Cell = cell;
+            _visitor.Visit(_expression);
+            Value = _visitor.LastExpValue;
+        }
+        public ExpVariable(SpreadsheetVisitor visitor, SpreadsheetParser.ExpContext expression)
+        {
+            _visitor = visitor;
+            _expression = expression;
+            _value = null;
         }
         public static bool IsThis(VariableBase variable)
         {
-            return variable.GetType() == typeof(CellCopyContent);
+            return variable.GetType() == typeof(ExpVariable);
         }
     }
 }
