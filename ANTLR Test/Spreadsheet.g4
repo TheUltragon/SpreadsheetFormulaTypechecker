@@ -76,7 +76,7 @@ COMMENT
     ;
 
 EMPTY
-	: '-/-'
+	: '\\'
 	;
 
 CHAR

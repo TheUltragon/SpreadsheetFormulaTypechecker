@@ -18,14 +18,13 @@ namespace ANTLR_Test
         public override bool VisitSpreadSheet([NotNull] SpreadsheetParser.SpreadSheetContext context)
         {
             Console.WriteLine("Visit SpreadSheet");
+            bool result = true;
             foreach (var child in context.children)
             {
-                if (!Visit(child))
-                {
-                    return false;
-                }
+                result &= Visit(child);
+               
             }
-            return true;
+            return result;
         }
 
         public override bool VisitCellStm([NotNull] SpreadsheetParser.CellStmContext context)
@@ -41,6 +40,7 @@ namespace ANTLR_Test
             {
                 int left = ((IntVariable)leftVal).Value;
                 int right = ((IntVariable)rightVal).Value;
+                Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
                 Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
                 return leftResult && rightResult && contentResult;
             }
@@ -72,5 +72,10 @@ namespace ANTLR_Test
             return true;
         }
 
+        public override bool VisitEmptyVal([NotNull] SpreadsheetParser.EmptyValContext context)
+        {
+            lastValue = new EmptyVariable();
+            return true;
+        }
     }
 }

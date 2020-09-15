@@ -20,10 +20,13 @@ namespace ANTLR_Test
 
             SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
             SpreadsheetVisitor visitor = new SpreadsheetVisitor();
-            Console.WriteLine(context.ToInfoString(spreadsheetParser));
 
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            Console.WriteLine(reader.ReadToEnd());
+            Console.WriteLine();
             Console.WriteLine(visitor.Visit(context));
-            foreach(var value in visitor.Repository.Cells)
+            Console.WriteLine();
+            foreach (var value in visitor.Repository.Cells)
             {
                 Console.WriteLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.ToString()}");
             }
