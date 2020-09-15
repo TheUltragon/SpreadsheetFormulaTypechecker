@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace ANTLR_Test
 {
-    public class VariableBase { }
+    public class ValueBase { }
 
-    public class Variable<T> : VariableBase
+    public class ValueGeneric<T> : ValueBase
     {
         public T Value { get; set; }
-        public Variable(T initialValue)
+        public ValueGeneric(T initialValue)
         {
             Value = initialValue;
         }
@@ -21,56 +21,56 @@ namespace ANTLR_Test
         }
     }
     
-    public class CharVariable : Variable<char>
+    public class CharValue : ValueGeneric<char>
     {
-        public CharVariable(char initialValue) : base(initialValue) { }
-        public static bool IsThis(VariableBase variable)
+        public CharValue(char initialValue) : base(initialValue) { }
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(CharVariable);
+            return variable.GetType() == typeof(CharValue);
         }
     }
 
-    public class IntVariable : Variable<int>
+    public class IntValue : ValueGeneric<int>
     {
-        public IntVariable(int initialValue) : base(initialValue) { }
-        public static bool IsThis(VariableBase variable)
+        public IntValue(int initialValue) : base(initialValue) { }
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(IntVariable);
+            return variable.GetType() == typeof(IntValue);
         }
     }
 
-    public class DecimalVariable : Variable<double>
+    public class DecimalValue : ValueGeneric<double>
     {
-        public DecimalVariable(double initialValue) : base(initialValue) { }
-        public static bool IsThis(VariableBase variable)
+        public DecimalValue(double initialValue) : base(initialValue) { }
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(DecimalVariable);
+            return variable.GetType() == typeof(DecimalValue);
         }
     }
 
-    public class StringVariable : Variable<string>
+    public class StringValue : ValueGeneric<string>
     {
-        public StringVariable(string initialValue) : base(initialValue) { }
-        public static bool IsThis(VariableBase variable)
+        public StringValue(string initialValue) : base(initialValue) { }
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(StringVariable);
+            return variable.GetType() == typeof(StringValue);
         }
     }
 
-    public class BoolVariable : Variable<bool>
+    public class BoolValue : ValueGeneric<bool>
     {
-        public BoolVariable(bool initialValue) : base(initialValue) { }
-        public static bool IsThis(VariableBase variable)
+        public BoolValue(bool initialValue) : base(initialValue) { }
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(BoolVariable);
+            return variable.GetType() == typeof(BoolValue);
         }
     }
 
-    public class EmptyVariable : VariableBase
+    public class EmptyValue : ValueBase
     {
-        public static bool IsThis(VariableBase variable)
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(EmptyVariable);
+            return variable.GetType() == typeof(EmptyValue);
         }
         public override string ToString()
         {
@@ -78,12 +78,12 @@ namespace ANTLR_Test
         }
     }
 
-    public class ExpVariable : VariableBase
+    public class ExpValue : ValueBase
     {
         private SpreadsheetVisitor _visitor;
         private SpreadsheetParser.ExpContext _expression;
-        private VariableBase _value;
-        public VariableBase Value
+        private ValueBase _value;
+        public ValueBase Value
         {
             get
             {
@@ -104,15 +104,19 @@ namespace ANTLR_Test
             _visitor.Visit(_expression);
             Value = _visitor.LastExpValue;
         }
-        public ExpVariable(SpreadsheetVisitor visitor, SpreadsheetParser.ExpContext expression)
+        public ExpValue(SpreadsheetVisitor visitor, SpreadsheetParser.ExpContext expression)
         {
             _visitor = visitor;
             _expression = expression;
             _value = null;
         }
-        public static bool IsThis(VariableBase variable)
+        public static bool IsThis(ValueBase variable)
         {
-            return variable.GetType() == typeof(ExpVariable);
+            return variable.GetType() == typeof(ExpValue);
+        }
+        public override string ToString()
+        {
+            return Value.ToString();
         }
     }
 }

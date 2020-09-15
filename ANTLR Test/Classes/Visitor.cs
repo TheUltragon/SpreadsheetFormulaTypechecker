@@ -12,8 +12,8 @@ namespace ANTLR_Test
     public class SpreadsheetVisitor : SpreadsheetBaseVisitor<bool>
     {
         public DataRepository Repository { get; private set; }
-        public VariableBase LastExpValue { get; private set; }
-        public VariableBase LastValue { get; private set; }
+        public ValueBase LastExpValue { get; private set; }
+        public ValueBase LastValue { get; private set; }
 
 
 
@@ -48,10 +48,10 @@ namespace ANTLR_Test
             var rightVal = LastExpValue;
             var contentResult = Visit(context.content);
             var contentVal = LastExpValue;
-            if(IntVariable.IsThis(leftVal) && IntVariable.IsThis(rightVal))
+            if(IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
             {
-                int left = ((IntVariable)leftVal).Value;
-                int right = ((IntVariable)rightVal).Value;
+                int left = ((IntValue)leftVal).Value;
+                int right = ((IntValue)rightVal).Value;
                 Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
                 Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
                 return leftResult && rightResult && contentResult;
@@ -73,20 +73,20 @@ namespace ANTLR_Test
         public override bool VisitCharVal([NotNull] SpreadsheetParser.CharValContext context)
         {
             char value = Char.Parse(context.CHAR().GetText());
-            LastValue = new CharVariable(value);
+            LastValue = new CharValue(value);
             return true;
         }
 
         public override bool VisitIntVal([NotNull] SpreadsheetParser.IntValContext context)
         {
             int value = int.Parse(context.INT().GetText());
-            LastValue = new IntVariable(value);
+            LastValue = new IntValue(value);
             return true;
         }
 
         public override bool VisitEmptyVal([NotNull] SpreadsheetParser.EmptyValContext context)
         {
-            LastValue = new EmptyVariable();
+            LastValue = new EmptyValue();
             return true;
         }
     }

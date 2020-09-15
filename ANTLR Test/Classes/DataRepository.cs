@@ -18,12 +18,12 @@ namespace ANTLR_Test
 
     public class DataRepository
     {
-        public Dictionary<Tuple<int, int>, VariableBase> Cells = new Dictionary<Tuple<int, int>, VariableBase>();
+        public Dictionary<Tuple<int, int>, ValueBase> Cells = new Dictionary<Tuple<int, int>, ValueBase>();
         public Type CurrentExpType;
 
-        public VariableBase GetCellContent(Tuple<int, int> cell)
+        public ValueBase GetCellContent(Tuple<int, int> cell)
         {
-            return Cells.GetValue<Tuple<int, int>, VariableBase>(cell);
+            return Cells.GetValue<Tuple<int, int>, ValueBase>(cell);
         }
     }
 
