@@ -19,6 +19,7 @@ namespace ANTLR_Test
     public class DataRepository
     {
         public Dictionary<Tuple<int, int>, ValueBase> Cells = new Dictionary<Tuple<int, int>, ValueBase>();
+        public Dictionary<string, ValueBase> Variables = new Dictionary<string, ValueBase>();
         public Type CurrentExpType;
 
         public ValueBase GetCellContent(Tuple<int, int> cell)

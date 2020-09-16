@@ -48,6 +48,21 @@ namespace ANTLR_Test
         }
     }
 
+    public class CurrencyValue : ValueGeneric<double>
+    {
+        public enum CurrencyType
+        {
+            Euros,
+            Dollars
+        }
+        public CurrencyValue(double initialValue, CurrencyType type) : base(initialValue) { this.type = type; }
+        public CurrencyType type;
+        public static bool IsThis(ValueBase variable)
+        {
+            return variable.GetType() == typeof(CurrencyValue);
+        }
+    }
+
     public class StringValue : ValueGeneric<string>
     {
         public StringValue(string initialValue) : base(initialValue) { }
@@ -63,6 +78,15 @@ namespace ANTLR_Test
         public static bool IsThis(ValueBase variable)
         {
             return variable.GetType() == typeof(BoolValue);
+        }
+    }
+
+    public class DateValue : ValueGeneric<DateTime>
+    {
+        public DateValue(DateTime initialValue) : base(initialValue) { }
+        public static bool IsThis(ValueBase variable)
+        {
+            return variable.GetType() == typeof(DateValue);
         }
     }
 
@@ -99,10 +123,11 @@ namespace ANTLR_Test
             }
         }
 
-        public void Eval()
+        public bool Eval()
         {
-            _visitor.Visit(_expression);
+            var result = _visitor.Visit(_expression);
             Value = _visitor.LastExpValue;
+            return result;
         }
         public ExpValue(SpreadsheetVisitor visitor, SpreadsheetParser.ExpContext expression)
         {
@@ -118,5 +143,17 @@ namespace ANTLR_Test
         {
             return Value.ToString();
         }
+    }
+    public enum VarType
+    {
+        Exp,
+        Bool,
+        String,
+        Int,
+        Decimal,
+        Date,
+        Currency,
+        None,
+        Char
     }
 }
