@@ -104,7 +104,7 @@ namespace ANTLR_Test
 
     public class ExpValue : ValueBase
     {
-        private SpreadsheetVisitor _visitor;
+        private SpreadsheetBaseVisitor<bool> _visitor;
         private SpreadsheetParser.ExpContext _expression;
         private ValueBase _value;
         public ValueBase Value
@@ -129,7 +129,7 @@ namespace ANTLR_Test
             Value = _visitor.LastExpValue;
             return result;
         }
-        public ExpValue(SpreadsheetVisitor visitor, SpreadsheetParser.ExpContext expression)
+        public ExpValue(SpreadsheetBaseVisitor<bool> visitor, SpreadsheetParser.ExpContext expression)
         {
             _visitor = visitor;
             _expression = expression;

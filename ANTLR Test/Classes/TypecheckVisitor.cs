@@ -11,15 +11,10 @@ namespace ANTLR_Test
 
     public class SpreadsheetVisitor : SpreadsheetBaseVisitor<bool>
     {
-        public DataRepository Repository { get; private set; }
-        public ValueBase LastExpValue { get; private set; }
-        public ValueBase LastValue { get; private set; }
-        public VarType LastType { get; private set; }
-
-
-        // ==========================================
-        // CSTR
-        // ==========================================
+        public DataRepository Repository { get; protected set; }
+        public ValueBase LastExpValue { get; protected set; }
+        public ValueBase LastValue { get; protected set; }
+        public VarType LastType { get; protected set; }
 
         public SpreadsheetVisitor()
         {
@@ -30,7 +25,20 @@ namespace ANTLR_Test
         public SpreadsheetVisitor(DataRepository repository)
         {
             Repository = repository;
+            LastType = VarType.None;
         }
+    }
+
+    public class TypecheckVisitor : SpreadsheetVisitor
+    {
+
+        // ==========================================
+        // CSTR
+        // ==========================================
+
+        public TypecheckVisitor() : base() { }
+
+        public TypecheckVisitor(DataRepository repository) : base(repository) { }
 
         // ==========================================
         // SpreadSheet Visit

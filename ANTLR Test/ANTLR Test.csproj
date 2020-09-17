@@ -65,10 +65,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classes\DataRepository.cs" />
+    <Compile Include="Classes\TypecheckVisitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\Variable.cs" />
-    <Compile Include="Classes\Visitor.cs" />
+    <Compile Include="Classes\InterpreterVisitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
