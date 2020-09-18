@@ -205,5 +205,28 @@ namespace ANTLR_Test.Classes
         {
             return type == VarType.Int || type == VarType.Decimal;
         }
+
+        public static bool IsText(this VarType type)
+        {
+            return type == VarType.Char || type == VarType.String;
+        }
+
+        public static VarType GetHighestNumericType(VarType left, VarType right)
+        {
+            if(left == VarType.Decimal || right == VarType.Decimal)
+            {
+                return VarType.Decimal;
+            }
+            return VarType.Int;
+        }
+
+        public static VarType GetHighestTextType(VarType left, VarType right)
+        {
+            if (left == VarType.String || right == VarType.String)
+            {
+                return VarType.String;
+            }
+            return VarType.Char;
+        }
     }
 }

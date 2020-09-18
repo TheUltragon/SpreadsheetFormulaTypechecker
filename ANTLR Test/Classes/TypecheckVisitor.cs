@@ -215,7 +215,38 @@ namespace ANTLR_Test.Classes
         // ==========================================
         public override bool VisitAddExp([NotNull] SpreadsheetParser.AddExpContext context)
         {
-            return base.VisitAddExp(context);
+            var result = Visit(context.left);
+            var leftType = LastType;
+            var leftValue = LastExpValue;
+
+            result &= Visit(context.left);
+            var rightType = LastType;
+            var rightValue = LastExpValue;
+
+            if(leftType == rightType && (leftType.IsNumeric() || leftType == VarType.String || leftType == VarType.Date || leftType == VarType.Currency)){
+                LastType = leftType;
+            }
+            else if(leftType.IsNumeric() && rightType.IsNumeric())
+            {
+                LastType = VarTypeExtensions.GetHighestNumericType(leftType, rightType);
+            }
+            else if(leftType.IsText() && rightType.IsText())
+            {
+                LastType = VarTypeExtensions.GetHighestTextType(leftType, rightType);
+            }
+            else
+            {
+                Handler.ThrowError(
+                    context.Start.Line, 
+                    context.Start.Column, 
+                    false, 
+                    ErrorType.IncompatibleTypesExpression, 
+                    $"Add Exp incompatible types {leftType.ToString()} and {rightType.ToString()}", 
+                    $"This addition expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                );
+            }
+
+            return result;
         }
 
 
