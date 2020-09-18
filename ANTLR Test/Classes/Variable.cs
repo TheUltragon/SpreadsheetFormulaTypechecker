@@ -198,4 +198,12 @@ namespace ANTLR_Test.Classes
         None,
         Char
     }
+
+    public static class VarTypeExtensions
+    {
+        public static bool IsNumeric(this VarType type)
+        {
+            return type == VarType.Int || type == VarType.Decimal;
+        }
+    }
 }

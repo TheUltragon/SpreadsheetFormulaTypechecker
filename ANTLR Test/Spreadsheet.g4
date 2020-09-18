@@ -46,6 +46,7 @@ fexp
 	: 'IF' threeArg													#ifFunc
 	| 'ISBLANK' oneArg												#isblankFunc
 	| 'SUM' anyArg													#sumFunc
+	| 'PROD' anyArg													#prodFunc
 	;
 
 oneArg

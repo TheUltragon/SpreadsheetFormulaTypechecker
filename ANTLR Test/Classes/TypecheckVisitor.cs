@@ -83,8 +83,15 @@ namespace ANTLR_Test.Classes
             }
             else
             {
-                Console.WriteLine($"Cell Stm has Cell expressions not of type int! On line {context.Start.Line}, column {context.Start.Column}");
-                return false;
+                bool result = Handler.ThrowError(
+                    context.Start.Line, 
+                    context.Start.Column, 
+                    false, 
+                    ErrorType.CellAdressWrongType, 
+                    $"Cell Eq Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
+                    $"Cell Statement has Cell expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                );
+                return result;
             }
         }
 
@@ -106,22 +113,21 @@ namespace ANTLR_Test.Classes
             }
             else
             {
-                Console.WriteLine($"Cell Eq Stm has Cell expressions not of type int! On line {context.Start.Line}, column {context.Start.Column}");
-                return false;
+                bool result = Handler.ThrowError(
+                    context.Start.Line, 
+                    context.Start.Column, 
+                    false, 
+                    ErrorType.CellAdressWrongType, 
+                    $"Cell Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
+                    $"Cell Equal Statement has Cell expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                );
+                return result;
             }
         }
 
         public override bool VisitEvalStm([NotNull] SpreadsheetParser.EvalStmContext context)
         {
             bool result = true;
-            foreach (var item in Repository.Cells.Values)
-            {
-                if (ExpValue.IsThis(item))
-                {
-                    result &= ((ExpValue)item).Eval();
-                }
-            }
-
             return result;
         }
 
@@ -148,9 +154,18 @@ namespace ANTLR_Test.Classes
             VarType expType = LastType;
 
             //Check, wether assignment declared type matches expression type and are not None
-            result &= varType == expType && varType != VarType.None;
-
-            if(result)
+            bool resultCheckTypes = varType == expType;
+            bool resultCheckTypeNotNone = varType != VarType.None;
+            if (!resultCheckTypes)
+            {
+                resultCheckTypes = Handler.ThrowError(context.Start.Line, context.Start.Column, true, ErrorType.IncompatibleTypesAssignment, $"Assignment incompatible types {varType.ToString()} and {expType.ToString()}", $"The variable of this assignment expects type {varType.ToString()} but was assigned an expression of type {expType.ToString()}.");
+            }
+            if (!resultCheckTypeNotNone)
+            {
+                resultCheckTypeNotNone = Handler.ThrowError(context.Start.Line, context.Start.Column, false, ErrorType.ExpectedOtherType, $"Assignment not type None", $"The assignment has assigned {id} an expression with type None.");
+            }
+            result &= resultCheckTypes && resultCheckTypeNotNone;
+            if (result)
             {
                 //Add var of id with value lastExp to DataRepository
                 Repository.Variables.Add(id, LastExpValue);
@@ -164,7 +179,12 @@ namespace ANTLR_Test.Classes
             bool result = true;
 
             result &= Visit(context.check);
-            result &= LastExpValue.GetVarType() == VarType.Bool;
+            bool resultCheckType = LastExpValue.GetVarType() == VarType.Bool;
+            if (!resultCheckType)
+            {
+                resultCheckType = Handler.ThrowError(context.check.Start.Line, context.check.Start.Column, false, ErrorType.ExpectedOtherType, "If Stm check type " + LastExpValue.GetVarType().ToString(), $"The check expression type of this if clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
+            }
+            result &= resultCheckType;
 
             result &= Visit(context.falseStm);
             result &= Visit(context.trueStm);
@@ -177,7 +197,13 @@ namespace ANTLR_Test.Classes
             bool result = true;
 
             result &= Visit(context.check);
-            result &= LastExpValue.GetVarType() == VarType.Bool;
+
+            bool resultCheckType = LastExpValue.GetVarType() == VarType.Bool;
+            if(!resultCheckType)
+            {
+                resultCheckType = Handler.ThrowError(context.check.Start.Line, context.check.Start.Column, false, ErrorType.ExpectedOtherType, "While Stm check type " + LastExpValue.GetVarType().ToString(), $"The check expression type of this while clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
+            }
+            result &= resultCheckType;
 
             result &= Visit(context.loopStm);
 
@@ -185,9 +211,12 @@ namespace ANTLR_Test.Classes
         }
 
         // ==========================================
-        // Statements
+        // Expressions
         // ==========================================
-
+        public override bool VisitAddExp([NotNull] SpreadsheetParser.AddExpContext context)
+        {
+            return base.VisitAddExp(context);
+        }
 
 
 

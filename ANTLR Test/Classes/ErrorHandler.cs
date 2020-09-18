@@ -24,8 +24,18 @@ namespace ANTLR_Test.Classes
 
     public enum ErrorType
     {
+        CellAdressWrongType,
         ExpectedOtherType,
         IncompatibleTypesExpression,
+        IncompatibleTypesAssignment,
+    }
+
+    public static class ErrorTypeExtension
+    {
+        public static string ToString(this ErrorType type)
+        {
+            return Enum.GetName(typeof(ErrorType), type);
+        }
     }
 
     public class ErrorHandler
@@ -50,27 +60,27 @@ namespace ANTLR_Test.Classes
             Load();
         }
 
-        //Returns, wether the error really was an error (true) or wether it was ignored (false)
-        public bool ThrowError(ErrorType type, string specifier, string payload)
+        //Returns, wether the error really was an error (false) or wether it was ignored (true)
+        public bool ThrowError(int line, int column, bool ignoreable, ErrorType type, string specifier, string payload)
         {
             //Check, wether this error should be ignored
-            if (!CheckIfErrorToBeThrown(type, specifier)){
+            if (ignoreable && !CheckIfErrorToBeThrown(type, specifier)){
                 //Check if ignored errors should be reported
                 if(data.LogIgnoredErrors)
                 {
-                    Console.WriteLine($"Ignored Error of type {type} and specifier {specifier}: {payload}");
+                    Console.WriteLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
                 }
-                return false;
+                return true;
             }
 
-            Console.WriteLine($"Error of type {type} and specifier {specifier}: {payload}");
+            Console.WriteLine($"Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
             //Check, wether unspecified errors should be ignore checked
-            if(!checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && data.CheckIgnoreForUnspecifiedErrors)
+            if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && data.CheckIgnoreForUnspecifiedErrors)
             {
                 return checkIgnoreForUnspecifiedError(type, specifier);
             }
 
-            return true;
+            return false;
         }
 
         private bool checkIgnoreForUnspecifiedError(ErrorType type, string specifier)
@@ -82,22 +92,22 @@ namespace ANTLR_Test.Classes
                 if (input.Equals("Y"))
                 {
                     data.IgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
-                    return false;
+                    return true;
                 }
                 else if (input.Equals("y"))
                 {
                     data.IgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
-                    return false;
+                    return true;
                 }
                 else if (input.Equals("N"))
                 {
                     data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
-                    return true;
+                    return false;
                 }
                 else if (input.Equals("n"))
                 {
                     data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
-                    return true;
+                    return false;
                 }
                 else
                 {
