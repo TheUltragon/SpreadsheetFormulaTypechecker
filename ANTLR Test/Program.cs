@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Antlr4.Runtime;
+using ANTLR_Test.Classes;
 
 namespace ANTLR_Test
 {
@@ -12,6 +13,7 @@ namespace ANTLR_Test
     {
         static void Main(string[] args)
         {
+            ErrorHandler handler = new ErrorHandler();
             StreamReader reader = File.OpenText("Testsuite/test-good1.xl");
             AntlrInputStream inputStream = new AntlrInputStream(reader);
             SpreadsheetLexer spreadsheetLexer = new SpreadsheetLexer(inputStream);
@@ -19,7 +21,7 @@ namespace ANTLR_Test
             SpreadsheetParser spreadsheetParser = new SpreadsheetParser(commonTokenStream);
 
             SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
-            SpreadsheetVisitor visitor = new SpreadsheetVisitor();
+            SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
 
             reader.BaseStream.Seek(0, SeekOrigin.Begin);
             Console.WriteLine(reader.ReadToEnd());

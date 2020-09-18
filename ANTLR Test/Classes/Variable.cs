@@ -4,9 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ANTLR_Test
+namespace ANTLR_Test.Classes
 {
-    public class ValueBase { }
+    public class ValueBase
+    {
+        public virtual VarType GetVarType()
+        {
+            return VarType.None;
+        }
+    }
 
     public class ValueGeneric<T> : ValueBase
     {
@@ -28,6 +34,10 @@ namespace ANTLR_Test
         {
             return variable.GetType() == typeof(CharValue);
         }
+        public override VarType GetVarType()
+        {
+            return VarType.Char;
+        }
     }
 
     public class IntValue : ValueGeneric<int>
@@ -37,6 +47,10 @@ namespace ANTLR_Test
         {
             return variable.GetType() == typeof(IntValue);
         }
+        public override VarType GetVarType()
+        {
+            return VarType.Int;
+        }
     }
 
     public class DecimalValue : ValueGeneric<double>
@@ -45,6 +59,10 @@ namespace ANTLR_Test
         public static bool IsThis(ValueBase variable)
         {
             return variable.GetType() == typeof(DecimalValue);
+        }
+        public override VarType GetVarType()
+        {
+            return VarType.Decimal;
         }
     }
 
@@ -61,6 +79,10 @@ namespace ANTLR_Test
         {
             return variable.GetType() == typeof(CurrencyValue);
         }
+        public override VarType GetVarType()
+        {
+            return VarType.Currency;
+        }
     }
 
     public class StringValue : ValueGeneric<string>
@@ -69,6 +91,10 @@ namespace ANTLR_Test
         public static bool IsThis(ValueBase variable)
         {
             return variable.GetType() == typeof(StringValue);
+        }
+        public override VarType GetVarType()
+        {
+            return VarType.String;
         }
     }
 
@@ -79,6 +105,10 @@ namespace ANTLR_Test
         {
             return variable.GetType() == typeof(BoolValue);
         }
+        public override VarType GetVarType()
+        {
+            return VarType.Bool;
+        }
     }
 
     public class DateValue : ValueGeneric<DateTime>
@@ -87,6 +117,10 @@ namespace ANTLR_Test
         public static bool IsThis(ValueBase variable)
         {
             return variable.GetType() == typeof(DateValue);
+        }
+        public override VarType GetVarType()
+        {
+            return VarType.Date;
         }
     }
 
@@ -100,11 +134,15 @@ namespace ANTLR_Test
         {
             return "Empty";
         }
+        public override VarType GetVarType()
+        {
+            return VarType.None;
+        }
     }
 
     public class ExpValue : ValueBase
     {
-        private SpreadsheetBaseVisitor<bool> _visitor;
+        private SpreadsheetVisitor _visitor;
         private SpreadsheetParser.ExpContext _expression;
         private ValueBase _value;
         public ValueBase Value
@@ -117,7 +155,7 @@ namespace ANTLR_Test
                 }
                 return _value;
             }
-            set
+            private set
             {
                 _value = value;
             }
@@ -129,7 +167,7 @@ namespace ANTLR_Test
             Value = _visitor.LastExpValue;
             return result;
         }
-        public ExpValue(SpreadsheetBaseVisitor<bool> visitor, SpreadsheetParser.ExpContext expression)
+        public ExpValue(SpreadsheetVisitor visitor, SpreadsheetParser.ExpContext expression)
         {
             _visitor = visitor;
             _expression = expression;
@@ -142,6 +180,10 @@ namespace ANTLR_Test
         public override string ToString()
         {
             return Value.ToString();
+        }
+        public override VarType GetVarType()
+        {
+            return Value.GetVarType();
         }
     }
     public enum VarType

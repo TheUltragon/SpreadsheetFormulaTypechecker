@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ANTLR_Test
+namespace ANTLR_Test.Classes
 {
     public static class DictionaryExtensions
     {

@@ -6,24 +6,27 @@ using System.Threading.Tasks;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 
-namespace ANTLR_Test
+namespace ANTLR_Test.Classes
 {
 
     public class SpreadsheetVisitor : SpreadsheetBaseVisitor<bool>
     {
+        public ErrorHandler Handler { get; protected set; }
         public DataRepository Repository { get; protected set; }
         public ValueBase LastExpValue { get; protected set; }
         public ValueBase LastValue { get; protected set; }
         public VarType LastType { get; protected set; }
 
-        public SpreadsheetVisitor()
+        public SpreadsheetVisitor(ErrorHandler handler)
         {
+            Handler = handler;
             Repository = new DataRepository();
             LastType = VarType.None;
         }
 
-        public SpreadsheetVisitor(DataRepository repository)
+        public SpreadsheetVisitor(ErrorHandler handler, DataRepository repository)
         {
+            Handler = handler;
             Repository = repository;
             LastType = VarType.None;
         }
@@ -36,9 +39,9 @@ namespace ANTLR_Test
         // CSTR
         // ==========================================
 
-        public TypecheckVisitor() : base() { }
+        public TypecheckVisitor(ErrorHandler handler) : base(handler) { }
 
-        public TypecheckVisitor(DataRepository repository) : base(repository) { }
+        public TypecheckVisitor(ErrorHandler handler, DataRepository repository) : base(handler, repository) { }
 
         // ==========================================
         // SpreadSheet Visit
@@ -155,6 +158,39 @@ namespace ANTLR_Test
 
             return result;
         }
+
+        public override bool VisitIfStm([NotNull] SpreadsheetParser.IfStmContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.check);
+            result &= LastExpValue.GetVarType() == VarType.Bool;
+
+            result &= Visit(context.falseStm);
+            result &= Visit(context.trueStm);
+
+            return result;
+        }
+
+        public override bool VisitWhileStm([NotNull] SpreadsheetParser.WhileStmContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.check);
+            result &= LastExpValue.GetVarType() == VarType.Bool;
+
+            result &= Visit(context.loopStm);
+
+            return result;
+        }
+
+        // ==========================================
+        // Statements
+        // ==========================================
+
+
+
+
 
         // ==========================================
         // Types

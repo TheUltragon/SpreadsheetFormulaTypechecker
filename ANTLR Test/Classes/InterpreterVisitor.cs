@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 
-namespace ANTLR_Test
+namespace ANTLR_Test.Classes
 {
 
     public class InterpreterVisitor : SpreadsheetVisitor
@@ -15,9 +15,9 @@ namespace ANTLR_Test
         // CSTR
         // ==========================================
 
-        public InterpreterVisitor() : base() { }
+        public InterpreterVisitor(ErrorHandler handler) : base(handler) { }
 
-        public InterpreterVisitor(DataRepository repository) : base(repository) { }
+        public InterpreterVisitor(ErrorHandler handler, DataRepository repository) : base(handler, repository) { }
 
         // ==========================================
         // SpreadSheet Visit
