@@ -29,8 +29,6 @@ exp
 	| left=exp '%' right=exp										#modExp
 	| left=exp '+' right=exp										#addExp
 	| left=exp '-' right=exp										#subExp				
-	| left=exp '<<' right=exp										#bitShiftDownExp
-	| left=exp '>>' right=exp										#bitShiftUpExp
 	| left=exp '<' right=exp										#smallerExp
 	| left=exp '>' right=exp										#greaterExp
 	| left=exp '<=' right=exp										#smallerEqExp

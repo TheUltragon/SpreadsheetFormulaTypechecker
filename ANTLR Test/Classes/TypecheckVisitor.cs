@@ -15,6 +15,7 @@ namespace ANTLR_Test.Classes
         public DataRepository Repository { get; protected set; }
         public ValueBase LastExpValue { get; protected set; }
         public ValueBase LastValue { get; protected set; }
+        public VarType LastFuncType { get; protected set; }
         public VarType LastType { get; protected set; }
 
         public SpreadsheetVisitor(ErrorHandler handler)
@@ -66,63 +67,74 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitCellStm([NotNull] SpreadsheetParser.CellStmContext context)
         {
-            Console.WriteLine("Visit CellStm");
-            var leftResult = Visit(context.left);
-            var leftVal = LastExpValue;
-            var rightResult = Visit(context.right);
-            var rightVal = LastExpValue;
-            var contentResult = Visit(context.content);
-            var contentVal = LastExpValue;
-            if(IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
-            {
-                int left = ((IntValue)leftVal).Value;
-                int right = ((IntValue)rightVal).Value;
-                Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
-                Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
-                return leftResult && rightResult && contentResult;
-            }
-            else
-            {
-                bool result = Handler.ThrowError(
-                    context.Start.Line, 
-                    context.Start.Column, 
-                    false, 
-                    ErrorType.CellAdressWrongType, 
-                    $"Cell Eq Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
-                    $"Cell Statement has Cell expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
-                );
-                return result;
-            }
-        }
+            bool result = true;
 
-        public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
-        {
-            Console.WriteLine("Visit CellStm");
-            var leftResult = Visit(context.left);
+            result &= Visit(context.left);
             var leftVal = LastExpValue;
-            var rightResult = Visit(context.right);
+
+            result &= Visit(context.right);
             var rightVal = LastExpValue;
-            var contentVal = new ExpValue(this, context.content);
+
+            result &= Visit(context.content);
+            var contentVal = new CellValue(this, LastExpValue);
+            var contentType = new CellType(this, LastType);
+
             if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
             {
                 int left = ((IntValue)leftVal).Value;
                 int right = ((IntValue)rightVal).Value;
                 Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
                 Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
-                return leftResult && rightResult;
+                Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
             }
             else
             {
-                bool result = Handler.ThrowError(
+                result = Handler.ThrowError(
+                    context.Start.Line, 
+                    context.Start.Column, 
+                    false, 
+                    ErrorType.CellAdressWrongType, 
+                    $"Cell Eq Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
+                    $"Cell Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                );
+            }
+
+            return result;
+        }
+
+        public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.left);
+            var leftVal = LastExpValue;
+
+            result &= Visit(context.right);
+            var rightVal = LastExpValue;
+
+            var contentVal = new CellValue(this, context.content);
+            var contentType = new CellType(this, context.content);
+
+            if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
+            {
+                int left = ((IntValue)leftVal).Value;
+                int right = ((IntValue)rightVal).Value;
+                Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
+                Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
+                Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
                     context.Start.Line, 
                     context.Start.Column, 
                     false, 
                     ErrorType.CellAdressWrongType, 
                     $"Cell Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
-                    $"Cell Equal Statement has Cell expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                    $"Cell Equal Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
                 );
-                return result;
             }
+            return result;
         }
 
         public override bool VisitEvalStm([NotNull] SpreadsheetParser.EvalStmContext context)
@@ -217,11 +229,9 @@ namespace ANTLR_Test.Classes
         {
             var result = Visit(context.left);
             var leftType = LastType;
-            var leftValue = LastExpValue;
 
             result &= Visit(context.left);
             var rightType = LastType;
-            var rightValue = LastExpValue;
 
             if(leftType == rightType && (leftType.IsNumeric() || leftType == VarType.String || leftType == VarType.Date || leftType == VarType.Currency)){
                 LastType = leftType;
@@ -232,22 +242,83 @@ namespace ANTLR_Test.Classes
             }
             else if(leftType.IsText() && rightType.IsText())
             {
-                LastType = VarTypeExtensions.GetHighestTextType(leftType, rightType);
+                //Char and Char or Char and string always returns a string
+                LastType = VarType.String;
             }
             else
             {
-                Handler.ThrowError(
+                result &= Handler.ThrowError(
                     context.Start.Line, 
                     context.Start.Column, 
-                    false, 
+                    true, 
                     ErrorType.IncompatibleTypesExpression, 
                     $"Add Exp incompatible types {leftType.ToString()} and {rightType.ToString()}", 
                     $"This addition expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitAndExp([NotNull] SpreadsheetParser.AndExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.left);
+            var rightType = LastType;
+
+            if (leftType == rightType && leftType == VarType.Bool)
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"And Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This and expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitCellExp([NotNull] SpreadsheetParser.CellExpContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && leftType == VarType.Int)
+            {
+                //TODO: Do Type inference for Cell Type
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    false,
+                    ErrorType.CellAdressWrongType,
+                    $"Cell Exp Adress not integer types {leftType.ToString()} and {rightType.ToString()}",
+                    $"Cell Expression has Adress expressions not of type int! Found expressions: {leftType.ToString()} and {rightType.ToString()}"
                 );
             }
 
             return result;
         }
+
+
 
 
 
@@ -298,6 +369,81 @@ namespace ANTLR_Test.Classes
             return true;
         }
 
+
+        // ==========================================
+        // Functions
+        // ==========================================
+
+        public override bool VisitIsblankFunc([NotNull] SpreadsheetParser.IsblankFuncContext context)
+        {
+            SpreadsheetParser.OneArgContext args = context.oneArg();
+            LastType = VarType.Bool;
+            return Visit(context.oneArg().exp());
+        }
+
+        public override bool VisitProdFunc([NotNull] SpreadsheetParser.ProdFuncContext context)
+        {
+            bool result = true;
+            var args = context.anyArg();
+            VarType type = VarType.None;
+            foreach (var child in args.children)
+            {
+                Visit(child);
+                if(type != VarType.None && !LastType.IsNumeric())
+                {
+                    result = Handler.ThrowError(
+                        context.Start.Line,
+                        context.Start.Column,
+                        true,
+                        ErrorType.ExpectedOtherType,
+                        $"Prod Func wrong type {LastType.ToString()}",
+                        $"The Product function expected an argument of type numeric, but got of type {LastType.ToString()} instead");
+                }
+                else
+                {
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, type);
+                }
+            }
+
+            if (result)
+            {
+                LastType = type;
+            }
+
+            return result;
+        }
+
+        public override bool VisitSumFunc([NotNull] SpreadsheetParser.SumFuncContext context)
+        {
+            bool result = true;
+            var args = context.anyArg();
+            VarType type = VarType.None;
+            foreach (var child in args.children)
+            {
+                Visit(child);
+                if (type != VarType.None && !LastType.IsNumeric())
+                {
+                    result = Handler.ThrowError(
+                        context.Start.Line,
+                        context.Start.Column,
+                        true,
+                        ErrorType.ExpectedOtherType,
+                        $"Prod Func wrong type {LastType.ToString()}",
+                        $"The Product function expected an argument of type numeric, but got of type {LastType.ToString()} instead");
+                }
+                else
+                {
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, type);
+                }
+            }
+
+            if (result)
+            {
+                LastType = type;
+            }
+
+            return result;
+        }
 
 
         // ==========================================
