@@ -181,6 +181,7 @@ namespace ANTLR_Test.Classes
             {
                 //Add var of id with value lastExp to DataRepository
                 Repository.Variables.Add(id, LastExpValue);
+                Repository.VariableTypes.Add(id, expType);
             }
 
             return result;
@@ -225,12 +226,18 @@ namespace ANTLR_Test.Classes
         // ==========================================
         // Expressions
         // ==========================================
+
+        public override bool VisitExp([NotNull] SpreadsheetParser.ExpContext context)
+        {
+            return base.VisitExp(context);
+        }
+
         public override bool VisitAddExp([NotNull] SpreadsheetParser.AddExpContext context)
         {
             var result = Visit(context.left);
             var leftType = LastType;
 
-            result &= Visit(context.left);
+            result &= Visit(context.right);
             var rightType = LastType;
 
             if(leftType == rightType && (leftType.IsNumeric() || leftType == VarType.String || leftType == VarType.Date || leftType == VarType.Currency)){
@@ -266,7 +273,7 @@ namespace ANTLR_Test.Classes
             var result = Visit(context.left);
             var leftType = LastType;
 
-            result &= Visit(context.left);
+            result &= Visit(context.right);
             var rightType = LastType;
 
             if (leftType == rightType && leftType == VarType.Bool)
@@ -305,7 +312,7 @@ namespace ANTLR_Test.Classes
             }
             else
             {
-                result = Handler.ThrowError(
+                result &= Handler.ThrowError(
                     context.Start.Line,
                     context.Start.Column,
                     false,
@@ -319,7 +326,459 @@ namespace ANTLR_Test.Classes
         }
 
 
+        public override bool VisitDivExp([NotNull] SpreadsheetParser.DivExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
 
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric() ||  leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else if (leftType.IsNumeric() && rightType.IsNumeric())
+            {
+                LastType = VarTypeExtensions.GetHighestNumericType(leftType, rightType);
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Div Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This Division expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitEqualExp([NotNull] SpreadsheetParser.EqualExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType)
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Equal Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This equality expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitGreaterEqExp([NotNull] SpreadsheetParser.GreaterEqExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric() || leftType == VarType.Date || leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Greater Eq Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This greater equal expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitGreaterExp([NotNull] SpreadsheetParser.GreaterExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric() || leftType == VarType.String || leftType == VarType.Date || leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Greater Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This greater expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitModExp([NotNull] SpreadsheetParser.ModExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && leftType.IsNumeric())
+            {
+                LastType = leftType;
+            }
+            else if (leftType.IsNumeric() && rightType.IsNumeric())
+            {
+                LastType = VarTypeExtensions.GetHighestNumericType(leftType, rightType);
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Greater Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This greater expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitMultExp([NotNull] SpreadsheetParser.MultExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric() || leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else if (leftType.IsNumeric() && rightType.IsNumeric())
+            {
+                LastType = VarTypeExtensions.GetHighestNumericType(leftType, rightType);
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Mult Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This multiplication expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitNotExp([NotNull] SpreadsheetParser.NotExpContext context)
+        {
+            var result = Visit(context.param);
+            var leftType = LastType;
+
+            if (leftType == VarType.Bool)
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Not Exp incompatible types {leftType.ToString()}",
+                    $"This not expression has the incompatible type {leftType.ToString()}. It expected 1 bool type."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitOrExp([NotNull] SpreadsheetParser.OrExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && leftType == VarType.Bool)
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Or Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This or expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitSmallerEqExp([NotNull] SpreadsheetParser.SmallerEqExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric() || leftType == VarType.Date || leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Smaller Eq Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This smaller equal expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitSmallerExp([NotNull] SpreadsheetParser.SmallerExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric() || leftType == VarType.Date || leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Smaller Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This smaller expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitSubExp([NotNull] SpreadsheetParser.SubExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType && (leftType.IsNumeric()  || leftType == VarType.Date || leftType == VarType.Currency))
+            {
+                LastType = leftType;
+            }
+            else if (leftType.IsNumeric() && rightType.IsNumeric())
+            {
+                LastType = VarTypeExtensions.GetHighestNumericType(leftType, rightType);
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"Sub Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This subtraction expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitUnequalExp([NotNull] SpreadsheetParser.UnequalExpContext context)
+        {
+            var result = Visit(context.left);
+            var leftType = LastType;
+
+            result &= Visit(context.right);
+            var rightType = LastType;
+
+            if (leftType == rightType)
+            {
+                LastType = leftType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"UnEqual Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
+                    $"This inequality expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                );
+                LastType = leftType;
+            }
+
+            return result;
+        }
+
+        public override bool VisitVarExp([NotNull] SpreadsheetParser.VarExpContext context)
+        {
+            //Identifier
+            string id = context.IDENT().GetText();
+            VarType type = VarType.None;
+            bool result = Repository.VariableTypes.TryGetValue(id, out type);
+            if (result)
+            {
+                LastType = type;
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.VariableNotDeclared,
+                    $"Var not declared yet",
+                    $"The variable with identifier {id} hasnt been declared prior to its useage here."
+                );
+                LastType = VarType.None;
+            }
+            return result;
+        }
+
+
+
+        // ==========================================
+        // Additive Expressions
+        // ==========================================
+
+        public override bool VisitBaseAExp([NotNull] SpreadsheetParser.BaseAExpContext context)
+        {
+            bool result = true;
+            Visit(context.param);
+            VarType type = LastType;
+            result = VarTypeExtensions.IsNumeric(type);
+            if (result)
+            {
+                LastType = type;
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.ExpectedOtherType,
+                    $"AExp unexpected type {type.ToString()}",
+                    $"Expected a numeric expression in base additive expression, but got type {type.ToString()} instead."
+                );
+            }
+            return result;
+        }
+
+        public override bool VisitNegAExp([NotNull] SpreadsheetParser.NegAExpContext context)
+        {
+            bool result = true;
+            Visit(context.param);
+            VarType type = LastType;
+            result = VarTypeExtensions.IsNumeric(type);
+            if (result)
+            {
+                LastType = type;
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.ExpectedOtherType,
+                    $"AExp unexpected type {type.ToString()}",
+                    $"Expected a numeric expression in negative additive expression, but got type {type.ToString()} instead."
+                );
+            }
+            return result;
+        }
+
+        public override bool VisitPosAExp([NotNull] SpreadsheetParser.PosAExpContext context)
+        {
+            bool result = true;
+            Visit(context.param);
+            VarType type = LastType;
+            result = VarTypeExtensions.IsNumeric(type);
+            if (result)
+            {
+                LastType = type;
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.ExpectedOtherType,
+                    $"AExp unexpected type {type.ToString()}",
+                    $"Expected a numeric expression in positive additive expression, but got type {type.ToString()} instead."
+                );
+            }
+            return result;
+        }
+
+        
 
 
 
@@ -374,11 +833,64 @@ namespace ANTLR_Test.Classes
         // Functions
         // ==========================================
 
+        public override bool VisitFunctionExp([NotNull] SpreadsheetParser.FunctionExpContext context)
+        {
+            return base.VisitFunctionExp(context);
+        }
+
         public override bool VisitIsblankFunc([NotNull] SpreadsheetParser.IsblankFuncContext context)
         {
             SpreadsheetParser.OneArgContext args = context.oneArg();
             LastType = VarType.Bool;
             return Visit(context.oneArg().exp());
+        }
+
+        public override bool VisitIfFunc([NotNull] SpreadsheetParser.IfFuncContext context)
+        {
+            bool result = true;
+
+            var args = context.threeArg();
+            var firstArg = args.GetChild(0);
+            Visit(firstArg);
+            VarType firstType = LastType;
+
+            var secondArg = args.GetChild(1);
+            Visit(secondArg);
+            VarType secondType = LastType;
+
+            var thirdArg = args.GetChild(2);
+            Visit(thirdArg);
+            VarType thirdType = LastType;
+
+            bool checkResult = firstType == VarType.Bool;
+            if (!checkResult)
+            {
+                checkResult = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.ExpectedOtherType,
+                    $"IfFunc unexpected check type {firstType.ToString()}",
+                    $"Expected a bool expression as the check expression in this if function, but got type {firstType.ToString()} instead."
+                );
+            }
+            bool equalResult = secondType == thirdType;
+            if (!equalResult)
+            {
+                equalResult = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.IncompatibleTypesExpression,
+                    $"IfFunc incompatible types {secondType.ToString()} and {thirdType.ToString()}",
+                    $"Expected that second and third expression of this if function are equal, but got types {secondType.ToString()} and {thirdType.ToString()} instead."
+                );
+            }
+
+            result &= checkResult && equalResult;
+            LastType = secondType;
+
+            return result;
         }
 
         public override bool VisitProdFunc([NotNull] SpreadsheetParser.ProdFuncContext context)

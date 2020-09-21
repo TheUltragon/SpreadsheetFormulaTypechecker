@@ -42,62 +42,79 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitCellStm([NotNull] SpreadsheetParser.CellStmContext context)
         {
-            Console.WriteLine("Visit CellStm");
-            var leftResult = Visit(context.left);
-            var leftVal = LastExpValue;
-            var rightResult = Visit(context.right);
-            var rightVal = LastExpValue;
-            var contentResult = Visit(context.content);
-            var contentVal = LastExpValue;
-            if(IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
-            {
-                int left = ((IntValue)leftVal).Value;
-                int right = ((IntValue)rightVal).Value;
-                Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
-                Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
-                return leftResult && rightResult && contentResult;
-            }
-            else
-            {
-                Console.WriteLine($"Cell Stm has Cell expressions not of type int! On line {context.Start.Line}, column {context.Start.Column}");
-                return false;
-            }
-        }
+            bool result = true;
 
-        public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
-        {
-            Console.WriteLine("Visit CellStm");
-            var leftResult = Visit(context.left);
+            result &= Visit(context.left);
             var leftVal = LastExpValue;
-            var rightResult = Visit(context.right);
+
+            result &= Visit(context.right);
             var rightVal = LastExpValue;
-            var contentVal = new ExpValue(this, context.content);
+
+            result &= Visit(context.content);
+            var contentVal = new CellValue(this, LastExpValue);
+            var contentType = new CellType(this, LastType);
+
             if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
             {
                 int left = ((IntValue)leftVal).Value;
                 int right = ((IntValue)rightVal).Value;
                 Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
                 Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
-                return leftResult && rightResult;
+                Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
             }
             else
             {
-                Console.WriteLine($"Cell Eq Stm has Cell expressions not of type int! On line {context.Start.Line}, column {context.Start.Column}");
-                return false;
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    false,
+                    ErrorType.CellAdressWrongType,
+                    $"Cell Eq Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}",
+                    $"Cell Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                );
             }
+
+            return result;
+        }
+
+        public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.left);
+            var leftVal = LastExpValue;
+
+            result &= Visit(context.right);
+            var rightVal = LastExpValue;
+
+            var contentVal = new CellValue(this, context.content);
+            var contentType = new CellType(this, context.content);
+
+            if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
+            {
+                int left = ((IntValue)leftVal).Value;
+                int right = ((IntValue)rightVal).Value;
+                Console.WriteLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
+                Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
+                Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
+            }
+            else
+            {
+                result &= Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    false,
+                    ErrorType.CellAdressWrongType,
+                    $"Cell Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}",
+                    $"Cell Equal Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                );
+            }
+            return result;
         }
 
         public override bool VisitEvalStm([NotNull] SpreadsheetParser.EvalStmContext context)
         {
             bool result = true;
-            foreach (var item in Repository.Cells.Values)
-            {
-                if (ExpValue.IsThis(item))
-                {
-                    result &= ((ExpValue)item).Eval();
-                }
-            }
-
             return result;
         }
 
@@ -121,16 +138,63 @@ namespace ANTLR_Test.Classes
             //Expression
             LastType = VarType.None;
             result &= Visit(context.exp());
+            ValueBase expValue = LastExpValue;
             VarType expType = LastType;
 
             //Check, wether assignment declared type matches expression type and are not None
-            result &= varType == expType && varType != VarType.None;
-
-            if(result)
+            bool resultCheckTypes = varType == expType;
+            bool resultCheckTypeNotNone = varType != VarType.None;
+            if (!resultCheckTypes)
+            {
+                resultCheckTypes = Handler.ThrowError(context.Start.Line, context.Start.Column, true, ErrorType.IncompatibleTypesAssignment, $"Assignment incompatible types {varType.ToString()} and {expType.ToString()}", $"The variable of this assignment expects type {varType.ToString()} but was assigned an expression of type {expType.ToString()}.");
+            }
+            if (!resultCheckTypeNotNone)
+            {
+                resultCheckTypeNotNone = Handler.ThrowError(context.Start.Line, context.Start.Column, false, ErrorType.ExpectedOtherType, $"Assignment not type None", $"The assignment has assigned {id} an expression with type None.");
+            }
+            result &= resultCheckTypes && resultCheckTypeNotNone;
+            if (result)
             {
                 //Add var of id with value lastExp to DataRepository
-                Repository.Variables.Add(id, LastExpValue);
+                Repository.Variables.Add(id, expValue);
+                Repository.VariableTypes.Add(id, expType);
             }
+
+            return result;
+        }
+
+        public override bool VisitIfStm([NotNull] SpreadsheetParser.IfStmContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.check);
+            bool resultCheckType = LastExpValue.GetVarType() == VarType.Bool;
+            if (!resultCheckType)
+            {
+                resultCheckType = Handler.ThrowError(context.check.Start.Line, context.check.Start.Column, false, ErrorType.ExpectedOtherType, "If Stm check type " + LastExpValue.GetVarType().ToString(), $"The check expression type of this if clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
+            }
+            result &= resultCheckType;
+
+            result &= Visit(context.falseStm);
+            result &= Visit(context.trueStm);
+
+            return result;
+        }
+
+        public override bool VisitWhileStm([NotNull] SpreadsheetParser.WhileStmContext context)
+        {
+            bool result = true;
+
+            result &= Visit(context.check);
+
+            bool resultCheckType = LastExpValue.GetVarType() == VarType.Bool;
+            if (!resultCheckType)
+            {
+                resultCheckType = Handler.ThrowError(context.check.Start.Line, context.check.Start.Column, false, ErrorType.ExpectedOtherType, "While Stm check type " + LastExpValue.GetVarType().ToString(), $"The check expression type of this while clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
+            }
+            result &= resultCheckType;
+
+            result &= Visit(context.loopStm);
 
             return result;
         }

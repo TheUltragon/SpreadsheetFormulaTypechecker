@@ -122,6 +122,7 @@ namespace ANTLR_Test.Classes
         public Dictionary<Tuple<int, int>, CellValue> Cells = new Dictionary<Tuple<int, int>, CellValue>();
         public Dictionary<Tuple<int, int>, CellType> CellTypes = new Dictionary<Tuple<int, int>, CellType>();
         public Dictionary<string, ValueBase> Variables = new Dictionary<string, ValueBase>();
+        public Dictionary<string, VarType> VariableTypes = new Dictionary<string, VarType>();
         public Type CurrentExpType;
 
         public CellValue GetCellContent(Tuple<int, int> cell)

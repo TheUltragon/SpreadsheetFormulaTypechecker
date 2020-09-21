@@ -24,6 +24,7 @@ namespace ANTLR_Test.Classes
 
     public enum ErrorType
     {
+        VariableNotDeclared,
         CellAdressWrongType,
         ExpectedOtherType,
         IncompatibleTypesExpression,

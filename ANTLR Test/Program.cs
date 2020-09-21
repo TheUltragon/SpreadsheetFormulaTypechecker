@@ -28,9 +28,9 @@ namespace ANTLR_Test
             Console.WriteLine();
             Console.WriteLine(visitor.Visit(context));
             Console.WriteLine();
-            foreach (var value in visitor.Repository.Cells)
+            foreach (var value in visitor.Repository.CellTypes)
             {
-                Console.WriteLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.ToString()}");
+                Console.WriteLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}");
             }
             Console.ReadLine();
         }

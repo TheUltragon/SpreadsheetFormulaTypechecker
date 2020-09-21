@@ -82,7 +82,13 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
-    <None Include="Testsuite\test-good1.xl">
+    <None Include="Testsuite\Bad\test-bad1.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\test-good2.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\test-good1.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
