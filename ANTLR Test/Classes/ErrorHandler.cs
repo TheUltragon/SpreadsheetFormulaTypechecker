@@ -18,7 +18,9 @@ namespace ANTLR_Test.Classes
         public ErrorHandlerData()
         {
             IgnoredErrors = new List<Tuple<ErrorType, string>>();
+            UnIgnoredErrors = new List<Tuple<ErrorType, string>>();
             LogIgnoredErrors = false;
+            CheckIgnoreForUnspecifiedErrors = true;
         }
     }
 
@@ -45,9 +47,15 @@ namespace ANTLR_Test.Classes
         private string path => "Data/ErrorHandler.json";
         public void Load()
         {
-            StreamReader reader = File.OpenText(path);
-            string jsonString = reader.ReadToEnd();
-            data = JsonConvert.DeserializeObject<ErrorHandlerData>(jsonString);
+            using(StreamReader reader = File.OpenText(path))
+            {
+                string jsonString = reader.ReadToEnd();
+                data = JsonConvert.DeserializeObject<ErrorHandlerData>(jsonString);
+                if (data == null)
+                {
+                    data = new ErrorHandlerData();
+                }
+            }
         }
 
         public void Save()
@@ -64,21 +72,27 @@ namespace ANTLR_Test.Classes
         //Returns, wether the error really was an error (false) or wether it was ignored (true)
         public bool ThrowError(int line, int column, bool ignoreable, ErrorType type, string specifier, string payload)
         {
+            Logger.Debug($"");
             //Check, wether this error should be ignored
             if (ignoreable && !CheckIfErrorToBeThrown(type, specifier)){
                 //Check if ignored errors should be reported
                 if(data.LogIgnoredErrors)
                 {
-                    Console.WriteLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
+                    Logger.Debug($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
                 }
                 return true;
             }
 
-            Console.WriteLine($"Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
+            Logger.Debug($"Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
             //Check, wether unspecified errors should be ignore checked
             if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && data.CheckIgnoreForUnspecifiedErrors)
             {
-                return checkIgnoreForUnspecifiedError(type, specifier);
+                bool result = checkIgnoreForUnspecifiedError(type, specifier);
+                if (result)
+                {
+                    Save();
+                }
+                return result;
             }
 
             return false;
@@ -86,7 +100,11 @@ namespace ANTLR_Test.Classes
 
         private bool checkIgnoreForUnspecifiedError(ErrorType type, string specifier)
         {
-            Console.WriteLine($"Should this error be ignored?\n   'y' to ignore this type and specifier combination, 'Y' to ignore the whole type, 'n' to keep reporting this type-specifier combination and 'N' to keep reporting this error type, regardless of combination.");
+            Logger.Debug($"Should this error be ignored?" +
+                $"\n    'y' to ignore this type and specifier combination, " +
+                $"\n    'Y' to ignore the whole type, " +
+                $"\n    'n' to keep reporting this type-specifier combination and " +
+                $"\n    'N' to keep reporting this error type, regardless of combination.");
             while (true)
             {
                 var input = Console.ReadLine();
@@ -112,7 +130,7 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    Console.WriteLine($"Unknown input, please input either 'Y', 'y', 'N' or 'n'.");
+                    Logger.Debug($"Unknown input, please input either 'Y', 'y', 'N' or 'n'.");
                 }
             }
         }

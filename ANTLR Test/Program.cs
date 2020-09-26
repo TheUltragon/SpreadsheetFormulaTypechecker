@@ -13,26 +13,61 @@ namespace ANTLR_Test
     {
         static void Main(string[] args)
         {
-            ErrorHandler handler = new ErrorHandler();
-            StreamReader reader = File.OpenText("Testsuite/test-good1.xl");
-            AntlrInputStream inputStream = new AntlrInputStream(reader);
-            SpreadsheetLexer spreadsheetLexer = new SpreadsheetLexer(inputStream);
-            CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
-            SpreadsheetParser spreadsheetParser = new SpreadsheetParser(commonTokenStream);
+            Logger.SetActive(true);
+            Logger.SetOutputFile("Log.txt");
 
-            SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
-            SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
+            Import();
+            TestSuite();
+        }
 
-            reader.BaseStream.Seek(0, SeekOrigin.Begin);
-            Console.WriteLine(reader.ReadToEnd());
-            Console.WriteLine();
-            Console.WriteLine(visitor.Visit(context));
-            Console.WriteLine();
-            foreach (var value in visitor.Repository.CellTypes)
+        static void TestSuite()
+        {
+            List<string> files = new List<string>();
+            files = files.Concat(Directory.EnumerateFiles("Testsuite\\Good")).ToList();
+            files = files.Concat(Directory.EnumerateFiles("Testsuite\\Bad")).ToList();
+            Logger.Debug($"Going to parse {files.Count} files");
+            Logger.Debug("");
+
+            foreach (var file in files)
             {
-                Console.WriteLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}");
+                Logger.Debug("====================================================");
+                Logger.Debug($"Parsing file {file}");
+                Logger.Debug("====================================================");
+                StreamReader reader = File.OpenText(file);
+                ErrorHandler handler = new ErrorHandler();
+                AntlrInputStream inputStream = new AntlrInputStream(reader);
+                SpreadsheetLexer spreadsheetLexer = new SpreadsheetLexer(inputStream);
+                CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
+                SpreadsheetParser spreadsheetParser = new SpreadsheetParser(commonTokenStream);
+
+                SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
+                SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
+
+                reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                Logger.Debug(reader.ReadToEnd());
+                Logger.Debug("");
+                Logger.Debug("Parsing has returned result: " + visitor.Visit(context));
+                Logger.Debug("");
+                foreach (var value in visitor.Repository.CellTypes)
+                {
+                    Logger.Debug($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}");
+                }
+                Console.ReadLine();
+                Logger.Debug("");
             }
-            Console.ReadLine();
+        }
+
+        static void Import()
+        {
+            List<string> files = new List<string>();
+            files = files.Concat(Directory.EnumerateFiles("Data\\Corpus")).ToList();
+            Logger.Debug($"Going to import {files.Count} files");
+            Logger.Debug("");
+
+            foreach (var file in files)
+            {
+                SpreadSheetImport.ImportFile(file);
+            }
         }
     }
 }
