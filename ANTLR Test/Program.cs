@@ -14,7 +14,7 @@ namespace ANTLR_Test
         static void Main(string[] args)
         {
             Logger.SetActive(true);
-            Logger.SetOutputFile("Log.txt");
+            //Logger.SetOutputFile("Log.txt");
 
             Import();
             TestSuite();
@@ -25,14 +25,14 @@ namespace ANTLR_Test
             List<string> files = new List<string>();
             files = files.Concat(Directory.EnumerateFiles("Testsuite\\Good")).ToList();
             files = files.Concat(Directory.EnumerateFiles("Testsuite\\Bad")).ToList();
-            Logger.Debug($"Going to parse {files.Count} files");
-            Logger.Debug("");
+            Logger.DebugLine($"Going to parse {files.Count} files");
+            Logger.DebugLine("");
 
             foreach (var file in files)
             {
-                Logger.Debug("====================================================");
-                Logger.Debug($"Parsing file {file}");
-                Logger.Debug("====================================================");
+                Logger.DebugLine("====================================================");
+                Logger.DebugLine($"Parsing file {file}");
+                Logger.DebugLine("====================================================");
                 StreamReader reader = File.OpenText(file);
                 ErrorHandler handler = new ErrorHandler();
                 AntlrInputStream inputStream = new AntlrInputStream(reader);
@@ -44,30 +44,28 @@ namespace ANTLR_Test
                 SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
 
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
-                Logger.Debug(reader.ReadToEnd());
-                Logger.Debug("");
-                Logger.Debug("Parsing has returned result: " + visitor.Visit(context));
-                Logger.Debug("");
+                Logger.DebugLine(reader.ReadToEnd());
+                Logger.DebugLine("");
+                Logger.DebugLine("Parsing has returned result: " + visitor.Visit(context));
+                Logger.DebugLine("");
                 foreach (var value in visitor.Repository.CellTypes)
                 {
-                    Logger.Debug($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}");
+                    Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}");
                 }
                 Console.ReadLine();
-                Logger.Debug("");
+                Logger.DebugLine("");
             }
         }
 
         static void Import()
         {
-            List<string> files = new List<string>();
-            files = files.Concat(Directory.EnumerateFiles("Data\\Corpus")).ToList();
-            Logger.Debug($"Going to import {files.Count} files");
-            Logger.Debug("");
+            ExcelReaderImporter excelReaderImporter = new ExcelReaderImporter();
+            LinqToExcelImporter linqToExcelImporter = new LinqToExcelImporter();
+            ExcelInteropImporter excelInteropImporter = new ExcelInteropImporter();
 
-            foreach (var file in files)
-            {
-                SpreadSheetImport.ImportFile(file);
-            }
+            //excelReaderImporter.ImportFiles();
+            //linqToExcelImporter.ImportFiles();
+            excelInteropImporter.ImportFiles();
         }
     }
 }

@@ -25,14 +25,19 @@ namespace ANTLR_Test.Classes
             //FileOut = new StreamWriter(path);
         }
 
+        public static void DebugLine(string text)
+        {
+            Debug(text + "\n");
+        }
+
         public static void Debug(string text)
         {
             if (Active)
             {
-                Console.WriteLine(text);
+                Console.Write(text);
                 if (!string.IsNullOrEmpty(OutputFilePath))
                 {
-                    File.AppendAllText(OutputFilePath, text + "\n");
+                    File.AppendAllText(OutputFilePath, text);
                 }
             }
         }

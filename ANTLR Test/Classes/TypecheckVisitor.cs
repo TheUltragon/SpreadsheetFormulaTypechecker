@@ -50,7 +50,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitSpreadSheet([NotNull] SpreadsheetParser.SpreadSheetContext context)
         {
-            Logger.Debug("Visit SpreadSheet");
+            Logger.DebugLine("Visit SpreadSheet");
             bool result = true;
             foreach (var child in context.children)
             {
@@ -67,7 +67,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitCellStm([NotNull] SpreadsheetParser.CellStmContext context)
         {
-            Logger.Debug("Visit Cell Stm");
+            Logger.DebugLine("Visit Cell Stm");
             bool result = true;
 
             result &= Visit(context.left);
@@ -84,7 +84,7 @@ namespace ANTLR_Test.Classes
             {
                 int left = ((IntValue)leftVal).Value;
                 int right = ((IntValue)rightVal).Value;
-                Logger.Debug($"Add Cell {left}, {right}, {contentVal.ToString()}");
+                Logger.DebugLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
                 Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
                 Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
             }
@@ -105,7 +105,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
         {
-            Logger.Debug("Visit Cell Eq Stm");
+            Logger.DebugLine("Visit Cell Eq Stm");
             bool result = true;
 
             result &= Visit(context.left);
@@ -121,7 +121,7 @@ namespace ANTLR_Test.Classes
             {
                 int left = ((IntValue)leftVal).Value;
                 int right = ((IntValue)rightVal).Value;
-                Logger.Debug($"Add Cell {left}, {right}, {contentVal.ToString()}");
+                Logger.DebugLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
                 Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
                 Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
             }
@@ -141,20 +141,20 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitEvalStm([NotNull] SpreadsheetParser.EvalStmContext context)
         {
-            Logger.Debug("Visit Eval Stm");
+            Logger.DebugLine("Visit Eval Stm");
             bool result = true;
             return result;
         }
 
         public override bool VisitEmptyStm([NotNull] SpreadsheetParser.EmptyStmContext context)
         {
-            Logger.Debug("Visit Empty Stm");
+            Logger.DebugLine("Visit Empty Stm");
             return true;
         }
 
         public override bool VisitAssignStm([NotNull] SpreadsheetParser.AssignStmContext context)
         {
-            Logger.Debug("Visit Assign Stm");
+            Logger.DebugLine("Visit Assign Stm");
             bool result = true;
 
             //Type
@@ -194,7 +194,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitIfStm([NotNull] SpreadsheetParser.IfStmContext context)
         {
-            Logger.Debug("Visit If Stm");
+            Logger.DebugLine("Visit If Stm");
             bool result = true;
 
             result &= Visit(context.check);
@@ -213,7 +213,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitWhileStm([NotNull] SpreadsheetParser.WhileStmContext context)
         {
-            Logger.Debug("Visit While Stm");
+            Logger.DebugLine("Visit While Stm");
             bool result = true;
 
             result &= Visit(context.check);
@@ -241,7 +241,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitAddExp([NotNull] SpreadsheetParser.AddExpContext context)
         {
-            Logger.Debug("Visit Add Exp");
+            Logger.DebugLine("Visit Add Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -278,7 +278,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitAndExp([NotNull] SpreadsheetParser.AndExpContext context)
         {
-            Logger.Debug("Visit And Exp");
+            Logger.DebugLine("Visit And Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -307,7 +307,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitCellExp([NotNull] SpreadsheetParser.CellExpContext context)
         {
-            Logger.Debug("Visit Cell Exp");
+            Logger.DebugLine("Visit Cell Exp");
             bool result = true;
 
             result &= Visit(context.left);
@@ -338,7 +338,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitDivExp([NotNull] SpreadsheetParser.DivExpContext context)
         {
-            Logger.Debug("Visit Div Exp");
+            Logger.DebugLine("Visit Div Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -371,7 +371,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitEqualExp([NotNull] SpreadsheetParser.EqualExpContext context)
         {
-            Logger.Debug("Visit Equal Exp");
+            Logger.DebugLine("Visit Equal Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -400,7 +400,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitGreaterEqExp([NotNull] SpreadsheetParser.GreaterEqExpContext context)
         {
-            Logger.Debug("Visit Greater Eq Exp");
+            Logger.DebugLine("Visit Greater Eq Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -429,7 +429,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitGreaterExp([NotNull] SpreadsheetParser.GreaterExpContext context)
         {
-            Logger.Debug("Visit Greater Exp");
+            Logger.DebugLine("Visit Greater Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -458,7 +458,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitModExp([NotNull] SpreadsheetParser.ModExpContext context)
         {
-            Logger.Debug("Visit Mod Exp");
+            Logger.DebugLine("Visit Mod Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -491,7 +491,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitMultExp([NotNull] SpreadsheetParser.MultExpContext context)
         {
-            Logger.Debug("Visit Mult Exp");
+            Logger.DebugLine("Visit Mult Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -524,7 +524,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitNotExp([NotNull] SpreadsheetParser.NotExpContext context)
         {
-            Logger.Debug("Visit Not Exp");
+            Logger.DebugLine("Visit Not Exp");
             var result = Visit(context.param);
             var leftType = LastType;
 
@@ -550,7 +550,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitOrExp([NotNull] SpreadsheetParser.OrExpContext context)
         {
-            Logger.Debug("Visit Or Exp");
+            Logger.DebugLine("Visit Or Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -579,7 +579,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitSmallerEqExp([NotNull] SpreadsheetParser.SmallerEqExpContext context)
         {
-            Logger.Debug("Visit Smaller Exp");
+            Logger.DebugLine("Visit Smaller Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -608,7 +608,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitSmallerExp([NotNull] SpreadsheetParser.SmallerExpContext context)
         {
-            Logger.Debug("Visit Smaller Eq Exp");
+            Logger.DebugLine("Visit Smaller Eq Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -637,7 +637,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitSubExp([NotNull] SpreadsheetParser.SubExpContext context)
         {
-            Logger.Debug("Visit Sub Exp");
+            Logger.DebugLine("Visit Sub Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -670,7 +670,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitUnequalExp([NotNull] SpreadsheetParser.UnequalExpContext context)
         {
-            Logger.Debug("Visit Unequal Exp");
+            Logger.DebugLine("Visit Unequal Exp");
             var result = Visit(context.left);
             var leftType = LastType;
 
@@ -699,7 +699,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitVarExp([NotNull] SpreadsheetParser.VarExpContext context)
         {
-            Logger.Debug("Visit Var Exp");
+            Logger.DebugLine("Visit Var Exp");
             //Identifier
             string id = context.IDENT().GetText();
             VarType type = VarType.None;
@@ -731,7 +731,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitBaseAExp([NotNull] SpreadsheetParser.BaseAExpContext context)
         {
-            Logger.Debug("Visit Base A Exp");
+            Logger.DebugLine("Visit Base A Exp");
             bool result = true;
             Visit(context.param);
             VarType type = LastType;
@@ -756,7 +756,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitNegAExp([NotNull] SpreadsheetParser.NegAExpContext context)
         {
-            Logger.Debug("Visit Neg A Exp");
+            Logger.DebugLine("Visit Neg A Exp");
             bool result = true;
             Visit(context.param);
             VarType type = LastType;
@@ -781,7 +781,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitPosAExp([NotNull] SpreadsheetParser.PosAExpContext context)
         {
-            Logger.Debug("Visit Pos A Exp");
+            Logger.DebugLine("Visit Pos A Exp");
             bool result = true;
             Visit(context.param);
             VarType type = LastType;
@@ -866,7 +866,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitIsblankFunc([NotNull] SpreadsheetParser.IsblankFuncContext context)
         {
-            Logger.Debug("Visit Isblank Exp");
+            Logger.DebugLine("Visit Isblank Exp");
             SpreadsheetParser.OneArgContext args = context.oneArg();
             LastType = VarType.Bool;
             return Visit(context.oneArg().exp());
@@ -874,7 +874,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitIfFunc([NotNull] SpreadsheetParser.IfFuncContext context)
         {
-            Logger.Debug("Visit If Exp");
+            Logger.DebugLine("Visit If Exp");
             bool result = true;
 
             var args = context.threeArg();
@@ -923,7 +923,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitProdFunc([NotNull] SpreadsheetParser.ProdFuncContext context)
         {
-            Logger.Debug("Visit Prod Exp");
+            Logger.DebugLine("Visit Prod Exp");
             bool result = true;
             var args = context.anyArg();
             VarType type = VarType.None;
@@ -956,7 +956,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitSumFunc([NotNull] SpreadsheetParser.SumFuncContext context)
         {
-            Logger.Debug("Visit Sum Exp");
+            Logger.DebugLine("Visit Sum Exp");
             bool result = true;
             var args = context.anyArg();
             VarType type = VarType.None;
