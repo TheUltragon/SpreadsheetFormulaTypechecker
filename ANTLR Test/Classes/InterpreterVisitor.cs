@@ -40,7 +40,7 @@ namespace ANTLR_Test.Classes
         // Statements
         // ==========================================
 
-        public override bool VisitCellStm([NotNull] SpreadsheetParser.CellStmContext context)
+        public override bool VisitCellValueStm([NotNull] SpreadsheetParser.CellValueStmContext context)
         {
             bool result = true;
 
@@ -77,7 +77,7 @@ namespace ANTLR_Test.Classes
             return result;
         }
 
-        public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
+        public override bool VisitCellFormulaStm([NotNull] SpreadsheetParser.CellFormulaStmContext context)
         {
             bool result = true;
 

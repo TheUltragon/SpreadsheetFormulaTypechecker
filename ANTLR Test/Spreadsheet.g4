@@ -10,8 +10,8 @@ spreadSheet
 
 stm
 	: ';'															#emptyStm
-	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellStm
-	| 'C[' left=exp '|' right=exp ']' '"' '=' content=exp '"'		#cellEqStm
+	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellValueStm
+	| 'C[' left=exp '|' right=exp ']' '"' '=' content=exp '"'		#cellFormulaStm
 	| type IDENT '=' exp											#assignStm
 	| 'eval'														#evalStm
 	| 'if' check=exp 'then' trueStm=stm 'else' falseStm=stm			#ifStm

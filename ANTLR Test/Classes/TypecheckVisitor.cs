@@ -65,9 +65,10 @@ namespace ANTLR_Test.Classes
         // Statements
         // ==========================================
 
-        public override bool VisitCellStm([NotNull] SpreadsheetParser.CellStmContext context)
+        //Value assignment to Cell
+        public override bool VisitCellValueStm([NotNull] SpreadsheetParser.CellValueStmContext context)
         {
-            Logger.DebugLine("Visit Cell Stm");
+            Logger.DebugLine("Visit Cell Value Stm");
             bool result = true;
 
             result &= Visit(context.left);
@@ -103,9 +104,10 @@ namespace ANTLR_Test.Classes
             return result;
         }
 
-        public override bool VisitCellEqStm([NotNull] SpreadsheetParser.CellEqStmContext context)
+        //Formula assignment to Cell
+        public override bool VisitCellFormulaStm([NotNull] SpreadsheetParser.CellFormulaStmContext context)
         {
-            Logger.DebugLine("Visit Cell Eq Stm");
+            Logger.DebugLine("Visit Cell Formula Stm");
             bool result = true;
 
             result &= Visit(context.left);

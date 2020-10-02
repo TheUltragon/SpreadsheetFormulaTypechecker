@@ -11,7 +11,6 @@ namespace ANTLR_Test.Classes
     {
         private static bool Active = false;
         private static string OutputFilePath = "";
-        private static StreamWriter FileOut;
         private static string Output = "";
         private static int MinLevelToConsole = 0;
 
@@ -29,7 +28,6 @@ namespace ANTLR_Test.Classes
         {
             OutputFilePath = path;
             File.WriteAllText(path, "");
-            //FileOut = new StreamWriter(path);
         }
 
         public static void DebugLine(string text, int level = 0)
