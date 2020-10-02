@@ -15,12 +15,19 @@ namespace ANTLR_Test.Classes
         {
             List<string> files = new List<string>();
             files = files.Concat(Directory.EnumerateFiles("Data\\Corpus")).ToList();
-            Logger.DebugLine($"Going to import {files.Count} files");
+            Logger.DebugLine($"Going to import {files.Count} files", 1);
             Logger.DebugLine("");
 
             foreach (var file in files)
             {
+                Console.WriteLine($"Enter to continue with file {file}");
+                Console.ReadLine();
+                Logger.DebugLine($"Importing File {file}", 1);
                 ImportFile(file);
+                Logger.DebugLine($"Finished Importing File {file}", 1);
+                Logger.SaveToFile();
+
+
             }
         }
     }

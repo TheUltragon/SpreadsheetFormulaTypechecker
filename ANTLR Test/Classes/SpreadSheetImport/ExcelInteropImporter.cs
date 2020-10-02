@@ -12,6 +12,7 @@ namespace ANTLR_Test.Classes
 {
     class ExcelInteropImporter : SpreadSheetImporter
     {
+        //Mostly copied from: https://www.dotnetperls.com/excel
         public override void ImportFile(string path)
         {
             Application app = new Application();
@@ -26,13 +27,14 @@ namespace ANTLR_Test.Classes
         private void handleWorkBook(Workbook workBook)
         {
             int numSheets = workBook.Sheets.Count;
-            Logger.DebugLine($"Sheets: {numSheets}");
+            Logger.DebugLine($"Sheets: {numSheets}", 1);
 
             //
             // Iterate through the sheets. They are indexed starting at 1.
             //
             for (int sheetNum = 1; sheetNum < numSheets + 1; sheetNum++)
             {
+                Logger.DebugLine($"Importing Sheet {sheetNum}", 1);
                 Worksheet sheet = (Worksheet)workBook.Sheets[sheetNum];
 
                 //
@@ -43,12 +45,27 @@ namespace ANTLR_Test.Classes
                 Range excelRange = sheet.UsedRange;
                 object[,] valueArray = (object[,])excelRange.get_Value(
                     XlRangeValueDataType.xlRangeValueDefault);
-                object[,] formulaArray = (object[,])excelRange.Formula;
+                object[,] formulaArray = new object[1,1];
+                if (excelRange.Formula is string)
+                {
+                    formulaArray[0, 0] = (string)excelRange.Formula;
+                }
+                else
+                {
+                    formulaArray = (object[,])excelRange.Formula;
+                }
 
                 //
                 // Do something with the data in the array with a custom method.
                 //
-                ProcessObjects(valueArray, formulaArray);
+                if(valueArray != null && formulaArray != null)
+                {
+                    ProcessObjects(valueArray, formulaArray);
+                }
+                else
+                {
+                    Logger.Debug("ValueArray or FormulaArray was null!");
+                }
             }
         }
 
@@ -59,10 +76,13 @@ namespace ANTLR_Test.Classes
             var xF = formulaArray.GetLength(0);
             var yF = formulaArray.GetLength(1);
 
-            Logger.DebugLine($"xV: {xV}, yV: {yV}, xF: {xF}, yF: {yF}");
+            Logger.DebugLine($"xV: {xV}, xF: {xF}, yV: {yV}, yF: {yF}");
 
+            Logger.DebugLine($"Processing Values", 1);
             printArray(valueArray, "Value");
+            Logger.DebugLine($"Processing Formulas", 1);
             printArray(formulaArray, "Formula");
+            Logger.DebugLine($"Comparing Values and Formulas", 1);
             compareArrays(valueArray, formulaArray);
         }
 
@@ -77,7 +97,7 @@ namespace ANTLR_Test.Classes
                 {
                     var value = array[i, j];
                     Logger.Debug($"{i}, {j}: ");
-                    printObject(value, "ArrayObject");
+                    printObject(value, name);
                     Logger.DebugLine("");
                 }
             }
@@ -97,9 +117,13 @@ namespace ANTLR_Test.Classes
             {
                 Logger.Debug($"double {name} {(double)value}");
             }
+            else if (value is DateTime)
+            {
+                Logger.Debug($"DateTime {name} {(DateTime)value}");
+            }
             else if (value != null)
             {
-                Logger.Debug($"unknown {name} {value.ToString()}, type: {value.GetType()}");
+                Logger.Debug($"unknown {name} {value.ToString()}, type: {value.GetType()}", 1);
             }
             else
             {
@@ -111,6 +135,14 @@ namespace ANTLR_Test.Classes
         {
             var x = valueArray.GetLength(0);
             var y = valueArray.GetLength(1);
+            var xF = formulaArray.GetLength(0);
+            var yF = formulaArray.GetLength(1);
+
+            if(x != xF || y != yF)
+            {
+                Logger.DebugLine("Compare Arrays: x and y dimensions dont match between arrays", 1);
+                Logger.DebugLine($"x: {x}, xF: {xF}, y: {y}, yF: {yF}", 1);
+            }
 
             for (int i = 1; i <= x; i++)
             {
@@ -137,7 +169,7 @@ namespace ANTLR_Test.Classes
                         Logger.Debug("----");
                         printObject(formula, "Formula");
                         Logger.DebugLine("");
-                        Logger.DebugLine($"{i}, {j}: Value does not equal Formula");
+                        Logger.DebugLine($"{i}, {j}: Value does not equal Formula", 1);
                     }
                 }
             }

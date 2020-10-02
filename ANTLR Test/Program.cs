@@ -15,6 +15,7 @@ namespace ANTLR_Test
         {
             Logger.SetActive(true);
             //Logger.SetOutputFile("Log.txt");
+            Logger.SetMinDebugLevelToConsole(0);
 
             Import();
             TestSuite();
@@ -30,9 +31,9 @@ namespace ANTLR_Test
 
             foreach (var file in files)
             {
-                Logger.DebugLine("====================================================");
-                Logger.DebugLine($"Parsing file {file}");
-                Logger.DebugLine("====================================================");
+                Logger.DebugLine("====================================================", 1);
+                Logger.DebugLine($"Parsing file {file}", 1);
+                Logger.DebugLine("====================================================", 1);
                 StreamReader reader = File.OpenText(file);
                 ErrorHandler handler = new ErrorHandler();
                 AntlrInputStream inputStream = new AntlrInputStream(reader);
@@ -44,16 +45,16 @@ namespace ANTLR_Test
                 SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
 
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
-                Logger.DebugLine(reader.ReadToEnd());
-                Logger.DebugLine("");
-                Logger.DebugLine("Parsing has returned result: " + visitor.Visit(context));
-                Logger.DebugLine("");
+                Logger.DebugLine(reader.ReadToEnd(), 1);
+                Logger.DebugLine("", 1);
+                Logger.DebugLine("Parsing has returned result: " + visitor.Visit(context), 1);
+                Logger.DebugLine("", 1);
                 foreach (var value in visitor.Repository.CellTypes)
                 {
-                    Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}");
+                    Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}", 1);
                 }
                 Console.ReadLine();
-                Logger.DebugLine("");
+                Logger.DebugLine("", 1);
             }
         }
 

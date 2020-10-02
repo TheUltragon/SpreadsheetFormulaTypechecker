@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 
 namespace ANTLR_Test.Classes
 {
+
+    //Mostly copied from: https://social.msdn.microsoft.com/Forums/de-DE/2c1adc81-7279-465d-a932-9f9d84bac978/excel-tabelle-mit-oledb-auslesen?forum=visualcsharpde
     class ExcelReaderImporter : SpreadSheetImporter
     {
         private string _newFile;

@@ -12,10 +12,17 @@ namespace ANTLR_Test.Classes
         private static bool Active = false;
         private static string OutputFilePath = "";
         private static StreamWriter FileOut;
+        private static string Output = "";
+        private static int MinLevelToConsole = 0;
 
         public static void SetActive(bool active)
         {
             Active = active;
+        }
+
+        public static void SetMinDebugLevelToConsole(int level)
+        {
+            MinLevelToConsole = level;
         }
 
         public static void SetOutputFile(string path)
@@ -25,21 +32,35 @@ namespace ANTLR_Test.Classes
             //FileOut = new StreamWriter(path);
         }
 
-        public static void DebugLine(string text)
+        public static void DebugLine(string text, int level = 0)
         {
-            Debug(text + "\n");
+            Debug(text + "\n", level);
         }
 
-        public static void Debug(string text)
+        public static void Debug(string text, int level = 0)
         {
             if (Active)
             {
-                Console.Write(text);
+                if(MinLevelToConsole <= level)
+                {
+                    Console.Write(text);
+                }
                 if (!string.IsNullOrEmpty(OutputFilePath))
                 {
-                    File.AppendAllText(OutputFilePath, text);
+                    Output += text;
                 }
             }
+        }
+
+        public static void SaveToFile()
+        {
+            if (!string.IsNullOrEmpty(OutputFilePath))
+            {
+                Console.Write("Saving to file...");
+                File.AppendAllText(OutputFilePath, Output);
+                Console.Write("Done saving");
+            }
+            Output = "";
         }
     }
 }
