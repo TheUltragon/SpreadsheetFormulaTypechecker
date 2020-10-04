@@ -196,6 +196,7 @@ namespace ANTLR_Test.Classes
         Date,
         Currency,
         None,
+        Unknown,
         Char
     }
 

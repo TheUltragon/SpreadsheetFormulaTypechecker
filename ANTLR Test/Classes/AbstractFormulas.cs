@@ -6,22 +6,6 @@ using System.Threading.Tasks;
 
 namespace ANTLR_Test.Classes
 {
-    public abstract class AbstractFormula
-    {
-        public SpreadsheetVisitor Visitor { get; set; }
-        public SpreadsheetParser.ExpContext Exp { get; set; }
-        public Dictionary<Tuple<int, int>, AbstractFormula> CellFormulas { get; set; }
-        public AbstracFormulaNode Node { get; private set; }
-
-        public AbstractFormula() { }
-
-        //Takes Exp and Translates it into an AbstractFormulaNode. Saves the result in Node
-        public abstract void Translate();
-
-        //Takes Node and Simplifies it (e.g.: Int + Int = Int). Best Case would be to just get a variable type
-        public abstract void Simplify();
-    }
-
     public class AbstractFormulas
     {
         public Dictionary<Tuple<int, int>, AbstractFormula> CellFormulas = new Dictionary<Tuple<int, int>, AbstractFormula>();
@@ -40,18 +24,32 @@ namespace ANTLR_Test.Classes
         }
         public void AddFormula(Tuple<int, int> cell, SpreadsheetParser.ExpContext formula)
         {
-            bool success = formulaDict.TryGetValue(formula.GetType(), out Type formulaType);
+            var abstractFormula = TranslateFormula(formula, out bool success);
+            if (success)
+            {
+                CellFormulas.Add(cell, abstractFormula);
+            }
+        }
+
+        public AbstractFormula TranslateFormula(SpreadsheetParser.ExpContext formula, out bool success)
+        {
+            success = formulaDict.TryGetValue(formula.GetType(), out Type formulaType);
             if (success)
             {
                 var abstractFormula = (AbstractFormula)Activator.CreateInstance(formulaType);
                 abstractFormula.Exp = formula;
                 abstractFormula.Visitor = Visitor;
                 abstractFormula.CellFormulas = CellFormulas;
+                abstractFormula.Formulas = this;
 
                 abstractFormula.Translate();
-                abstractFormula.Simplify();
-
-                CellFormulas.Add(cell, abstractFormula);
+                //abstractFormula.Simplify();   //Simplify is own function, dont partially simplify throughout translation (might be performance boost though)
+                return abstractFormula;
+            }
+            else
+            {
+                Logger.DebugLine($"Error - Couldnt Translate Formula, formula Type {formula.GetType()} not registered yet.");
+                return null;
             }
         }
     }

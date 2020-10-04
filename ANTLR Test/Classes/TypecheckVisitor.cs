@@ -1020,7 +1020,7 @@ namespace ANTLR_Test.Classes
         public override bool VisitEmptyVal([NotNull] SpreadsheetParser.EmptyValContext context)
         {
             LastValue = new EmptyValue();
-            LastType = VarType.None;
+            LastType = VarType.Unknown;
             return true;
         }
 

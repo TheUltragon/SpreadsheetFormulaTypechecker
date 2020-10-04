@@ -79,7 +79,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\AbstracFormulaNode.cs" />
+    <Compile Include="Classes\AbstractFormulaNode.cs" />
+    <Compile Include="Classes\AbstractFormula.cs" />
     <Compile Include="Classes\AbstractFormulas.cs" />
     <Compile Include="Classes\AbstractZones.cs" />
     <Compile Include="Classes\DataRepository.cs" />
