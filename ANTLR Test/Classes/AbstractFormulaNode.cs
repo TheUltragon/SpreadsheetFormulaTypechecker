@@ -18,12 +18,17 @@ namespace ANTLR_Test.Classes
         public AbstractErrorNode(string text)
         {
             ErrorText = text;
-            Logger.Debug(text);
+            Logger.Debug("Created ErrorNode: " + text);
         }
 
         public override AbstractFormulaNode Simplify()
         {
             return this;
+        }
+
+        public override string ToString()
+        {
+            return $"ErrorNode: {ErrorText}";
         }
     }
 
@@ -39,6 +44,11 @@ namespace ANTLR_Test.Classes
         public override AbstractFormulaNode Simplify()
         {
             return this;
+        }
+
+        public override string ToString()
+        {
+            return $"TypeNode: {Type.ToString()}";
         }
     }
 
@@ -57,17 +67,19 @@ namespace ANTLR_Test.Classes
         {
             return this;
         }
+
+        public override string ToString()
+        {
+            return $"CellNode: Index: {CellIndex.ToString()}, isRelative: {IsRelative}";
+        }
     }
 
     public abstract class AbstractFunctionNode : AbstractFormulaNode
     {
-        public abstract Type FunctionType { get; } 
     }
 
     public class AbstractProductNode : AbstractFunctionNode
     {
-        public override Type FunctionType => typeof(SpreadsheetParser.ProdFuncContext);
-
         public List<AbstractFormulaNode> Children;
 
         public AbstractProductNode(List<AbstractFormulaNode> children)
@@ -87,7 +99,7 @@ namespace ANTLR_Test.Classes
                 if(newChild is AbstractTypeNode && simplifySuccess)
                 {
                     var tp = ((AbstractTypeNode)newChild).Type;
-                    if (VarTypeExtensions.IsNumeric(tp){
+                    if (VarTypeExtensions.IsNumeric(tp)){
                         highestType = VarTypeExtensions.GetHighestNumericType(tp, highestType);
                     }
                     else
@@ -113,6 +125,17 @@ namespace ANTLR_Test.Classes
                 return this;
             }
         }
+
+        public override string ToString()
+        {
+            string result = "ProductNode: Children: ";
+            foreach(var child in Children)
+            {
+                result += child.ToString() + ", ";
+            }
+
+            return result;
+        }
     }
 
 
@@ -120,13 +143,10 @@ namespace ANTLR_Test.Classes
 
     public abstract class AbstractOperatorNode : AbstractFormulaNode
     {
-        public abstract Type OperatorType { get; }
     }
 
     public class AbstractAddNode : AbstractOperatorNode
     {
-        public override Type OperatorType => typeof(SpreadsheetParser.AddExpContext);
-
         public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
 
         public AbstractAddNode(AbstractFormulaNode child1, AbstractFormulaNode child2)
@@ -159,6 +179,12 @@ namespace ANTLR_Test.Classes
             }
 
             return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"AddNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
         }
     }
 }

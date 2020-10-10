@@ -15,6 +15,8 @@ namespace ANTLR_Test.Classes
         }
     }
 
+    
+
     public class CellValue
     {
         private ValueBase _value;
@@ -34,6 +36,8 @@ namespace ANTLR_Test.Classes
         }
         public SpreadsheetParser.ExpContext Expression { get; set; }
         private SpreadsheetVisitor _visitor;
+        private Tuple<int, int> _parentCell;
+
         public CellValue(SpreadsheetVisitor visitor, ValueBase value)
         {
             _visitor = visitor;
@@ -55,10 +59,16 @@ namespace ANTLR_Test.Classes
             Expression = expression;
         }
 
+        public void SetParentCell(Tuple<int, int> address)
+        {
+            _parentCell = address;
+        }
+
         public void Eval()
         {
             if(Expression != null)
             {
+                _visitor.CurrentAddress = _parentCell;
                 _visitor.Visit(Expression);
                 Value = _visitor.LastExpValue;
             }
@@ -85,6 +95,7 @@ namespace ANTLR_Test.Classes
         }
         public SpreadsheetParser.ExpContext Expression { get; set; }
         private SpreadsheetVisitor _visitor;
+        private Tuple<int, int> _parentCell;
         public CellType(SpreadsheetVisitor visitor, VarType value)
         {
             _visitor = visitor;
@@ -105,11 +116,15 @@ namespace ANTLR_Test.Classes
             Type = tp;
             Expression = expression;
         }
-
+        public void SetParentCell(Tuple<int, int> address)
+        {
+            _parentCell = address;
+        }
         public void Eval()
         {
             if (Expression != null)
             {
+                _visitor.CurrentAddress = _parentCell;
                 _visitor.Visit(Expression);
                 Type = _visitor.LastType;
             }
@@ -121,9 +136,15 @@ namespace ANTLR_Test.Classes
     {
         public Dictionary<Tuple<int, int>, CellValue> Cells = new Dictionary<Tuple<int, int>, CellValue>();
         public Dictionary<Tuple<int, int>, CellType> CellTypes = new Dictionary<Tuple<int, int>, CellType>();
+        public Dictionary<Tuple<int, int>, VarType> CellTypeAssigns = new Dictionary<Tuple<int, int>, VarType>();
         public Dictionary<string, ValueBase> Variables = new Dictionary<string, ValueBase>();
         public Dictionary<string, VarType> VariableTypes = new Dictionary<string, VarType>();
-        public Type CurrentExpType;
+        public AbstractFormulas Formulas { get; private set; }
+
+        public DataRepository(SpreadsheetVisitor visitor)
+        {
+            Formulas = new AbstractFormulas(visitor);
+        }
 
         public CellValue GetCellContent(Tuple<int, int> cell)
         {

@@ -9,6 +9,13 @@ using Antlr4.Runtime.Tree;
 namespace ANTLR_Test.Classes
 {
 
+    public enum RelativityType
+    {
+        None,
+        Positive,
+        Negative,
+    }
+
     public class SpreadsheetVisitor : SpreadsheetBaseVisitor<bool>
     {
         public ErrorHandler Handler { get; protected set; }
@@ -17,12 +24,16 @@ namespace ANTLR_Test.Classes
         public ValueBase LastValue { get; protected set; }
         public VarType LastFuncType { get; protected set; }
         public VarType LastType { get; protected set; }
+        public Tuple<int,int> CurrentAddress { get; set; }
+        public RelativityType LastRelativity { get; protected set; }
 
         public SpreadsheetVisitor(ErrorHandler handler)
         {
             Handler = handler;
-            Repository = new DataRepository();
+            Repository = new DataRepository(this);
             LastType = VarType.None;
+            CurrentAddress = null;
+            LastRelativity = RelativityType.None;
         }
 
         public SpreadsheetVisitor(ErrorHandler handler, DataRepository repository)
@@ -30,6 +41,8 @@ namespace ANTLR_Test.Classes
             Handler = handler;
             Repository = repository;
             LastType = VarType.None;
+            CurrentAddress = null;
+            LastRelativity = RelativityType.None;
         }
     }
 
@@ -65,6 +78,46 @@ namespace ANTLR_Test.Classes
         // Statements
         // ==========================================
 
+        public override bool VisitCellTypeStm([NotNull] SpreadsheetParser.CellTypeStmContext context)
+        {
+            Logger.DebugLine("Visit Cell Type Stm");
+            bool result = true;
+
+            result &= Visit(context.left);
+            var leftVal = LastExpValue;
+
+            result &= Visit(context.right);
+            var rightVal = LastExpValue;
+            
+
+            if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
+            {
+                int left = ((IntValue)leftVal).Value;
+                int right = ((IntValue)rightVal).Value;
+                CurrentAddress = new Tuple<int, int>(left, right);
+
+                result &= Visit(context.tp);
+                var contentType = LastType;
+
+                Logger.DebugLine($"Add Cell Type {left}, {right}, {contentType.ToString()}");
+                Repository.CellTypeAssigns[CurrentAddress] = contentType;
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    false,
+                    ErrorType.CellAdressWrongType,
+                    $"Cell Type Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}",
+                    $"Cell Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                );
+            }
+
+            return result;
+        }
+
+
         //Value assignment to Cell
         public override bool VisitCellValueStm([NotNull] SpreadsheetParser.CellValueStmContext context)
         {
@@ -77,17 +130,36 @@ namespace ANTLR_Test.Classes
             result &= Visit(context.right);
             var rightVal = LastExpValue;
 
-            result &= Visit(context.content);
-            var contentVal = new CellValue(this, LastExpValue);
-            var contentType = new CellType(this, LastType);
-
             if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
             {
                 int left = ((IntValue)leftVal).Value;
                 int right = ((IntValue)rightVal).Value;
-                Logger.DebugLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
-                Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
-                Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
+                var address = new Tuple<int, int>(left, right);
+                CurrentAddress = address;
+
+                if (Repository.CellTypeAssigns.TryGetValue(address, out VarType type) && type != LastType)
+                {
+                    result = Handler.ThrowError(
+                        context.Start.Line,
+                        context.Start.Column,
+                        true,
+                        ErrorType.CellWrongType,
+                        $"Cell Value Stm has different type {type.ToString()} assigned than {LastType.ToString()}",
+                        $"Cell Value Statement has Type {type.ToString()} assigned, but now gets assigned an expression of type {LastType.ToString()}"
+                    );
+                }
+                if (result)
+                {
+                    result &= Visit(context.content);
+                    var contentVal = new CellValue(this, LastExpValue);
+                    contentVal.SetParentCell(address);
+                    var contentType = new CellType(this, LastType);
+                    contentType.SetParentCell(address);
+
+                    Logger.DebugLine($"Add Cell Value {left}, {right}, {contentVal.ToString()}");
+                    Repository.Cells[address] = contentVal;
+                    Repository.CellTypes[address] = contentType;
+                }
             }
             else
             {
@@ -116,16 +188,24 @@ namespace ANTLR_Test.Classes
             result &= Visit(context.right);
             var rightVal = LastExpValue;
 
-            var contentVal = new CellValue(this, context.content);
-            var contentType = new CellType(this, context.content);
+           
 
             if (IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
             {
                 int left = ((IntValue)leftVal).Value;
                 int right = ((IntValue)rightVal).Value;
-                Logger.DebugLine($"Add Cell {left}, {right}, {contentVal.ToString()}");
-                Repository.Cells[new Tuple<int, int>(left, right)] = contentVal;
-                Repository.CellTypes[new Tuple<int, int>(left, right)] = contentType;
+                var address = new Tuple<int, int>(left, right);
+                CurrentAddress = address;
+
+                var contentVal = new CellValue(this, context.content);
+                contentVal.SetParentCell(address);
+                var contentType = new CellType(this, context.content);
+                contentType.SetParentCell(address);
+
+                Logger.DebugLine($"Add Cell Formula {left}, {right}, {contentVal.ToString()}");
+                Repository.Cells[address] = contentVal;
+                Repository.CellTypes[address] = contentType;
+                Repository.Formulas.AddFormula(address, context.content);
             }
             else
             {
@@ -143,6 +223,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitEvalStm([NotNull] SpreadsheetParser.EvalStmContext context)
         {
+            CurrentAddress = null;
             Logger.DebugLine("Visit Eval Stm");
             bool result = true;
             return result;
@@ -150,12 +231,14 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitEmptyStm([NotNull] SpreadsheetParser.EmptyStmContext context)
         {
+            CurrentAddress = null;
             Logger.DebugLine("Visit Empty Stm");
             return true;
         }
 
         public override bool VisitAssignStm([NotNull] SpreadsheetParser.AssignStmContext context)
         {
+            CurrentAddress = null;
             Logger.DebugLine("Visit Assign Stm");
             bool result = true;
 
@@ -196,6 +279,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitIfStm([NotNull] SpreadsheetParser.IfStmContext context)
         {
+            CurrentAddress = null;
             Logger.DebugLine("Visit If Stm");
             bool result = true;
 
@@ -215,6 +299,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitWhileStm([NotNull] SpreadsheetParser.WhileStmContext context)
         {
+            CurrentAddress = null;
             Logger.DebugLine("Visit While Stm");
             bool result = true;
 
@@ -314,13 +399,28 @@ namespace ANTLR_Test.Classes
 
             result &= Visit(context.left);
             var leftType = LastType;
+            var leftVal = LastExpValue;
+            var leftRelativity = LastRelativity;
 
             result &= Visit(context.right);
             var rightType = LastType;
+            var rightVal = LastExpValue;
+            var rightRelativity = LastRelativity;
 
-            if (leftType == rightType && leftType == VarType.Int)
+            if (leftType == rightType && leftType == VarType.Int && IntValue.IsThis(leftVal) && IntValue.IsThis(rightVal))
             {
-                //TODO: Do Type inference for Cell Type
+                int left = ((IntValue)leftVal).Value;
+                int right = ((IntValue)rightVal).Value;
+                Tuple<int,int> address = CalculateAddress(context, CurrentAddress, left, leftRelativity, right, rightRelativity, out bool resultTemp);
+                result &= resultTemp;
+                if(Repository.CellTypes.TryGetValue(address, out CellType type))
+                {
+                    LastType = type.Type;
+                }
+                else
+                {
+                    LastType = VarType.Unknown;
+                }
             }
             else
             {
@@ -336,7 +436,64 @@ namespace ANTLR_Test.Classes
 
             return result;
         }
+        private enum AddressType
+        {
+            Left,
+            Right
+        }
+        private Tuple<int, int> CalculateAddress(SpreadsheetParser.CellExpContext context, Tuple<int, int> currentAddress, int left, RelativityType leftRelativity, int right, RelativityType rightRelativity, out bool result)
+        {
+            result = true;
+            bool resultTemp;
+            int leftVal = CalculateAddress(context, currentAddress, left, leftRelativity, AddressType.Left, out resultTemp);
+            result &= resultTemp;
+            int rightVal = CalculateAddress(context, currentAddress, right, rightRelativity, AddressType.Right, out resultTemp);
+            result &= resultTemp;
+            return new Tuple<int, int>(leftVal, rightVal);
+        }
 
+        private int CalculateAddress(SpreadsheetParser.CellExpContext context, Tuple<int, int> currentAddress, int value, RelativityType relativity, AddressType type, out bool result)
+        {
+            if(relativity == RelativityType.None)
+            {
+                result = true;
+                return value;
+            }
+            else if(currentAddress != null)
+            {
+                int addressValue = currentAddress.Item1;
+                if(type == AddressType.Right)
+                {
+                    addressValue = currentAddress.Item2;
+                }
+                if(relativity == RelativityType.Positive)
+                {
+                    result = true;
+                    return addressValue + value;
+                }
+                else if(relativity == RelativityType.Negative)
+                {
+                    result = true;
+                    return addressValue - value;
+                }
+            }
+            else
+            {
+                result = Handler.ThrowError(
+                    context.Start.Line,
+                    context.Start.Column,
+                    true,
+                    ErrorType.CellAdressRelativeNotFound,
+                    $"Expected Base Cell Adress",
+                    $"The Cell Expression had a relative cell address, but it wasnt part of a cell statement to know which address it should be relative to."
+                );
+                return value;
+            }
+
+            Logger.DebugLine("Error: CalculateAddress fallthrough");
+            result = false;
+            return value;
+        }
 
         public override bool VisitDivExp([NotNull] SpreadsheetParser.DivExpContext context)
         {
@@ -734,6 +891,7 @@ namespace ANTLR_Test.Classes
         public override bool VisitBaseAExp([NotNull] SpreadsheetParser.BaseAExpContext context)
         {
             Logger.DebugLine("Visit Base A Exp");
+            LastRelativity = RelativityType.None;
             bool result = true;
             Visit(context.param);
             VarType type = LastType;
@@ -759,6 +917,7 @@ namespace ANTLR_Test.Classes
         public override bool VisitNegAExp([NotNull] SpreadsheetParser.NegAExpContext context)
         {
             Logger.DebugLine("Visit Neg A Exp");
+            LastRelativity = RelativityType.Negative;
             bool result = true;
             Visit(context.param);
             VarType type = LastType;
@@ -784,6 +943,7 @@ namespace ANTLR_Test.Classes
         public override bool VisitPosAExp([NotNull] SpreadsheetParser.PosAExpContext context)
         {
             Logger.DebugLine("Visit Pos A Exp");
+            LastRelativity = RelativityType.Positive;
             bool result = true;
             Visit(context.param);
             VarType type = LastType;

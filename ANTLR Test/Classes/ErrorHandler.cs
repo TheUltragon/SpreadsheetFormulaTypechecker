@@ -28,9 +28,12 @@ namespace ANTLR_Test.Classes
     {
         VariableNotDeclared,
         CellAdressWrongType,
+        CellAdressRelativeNotFound,
+        CellWrongType,
         ExpectedOtherType,
         IncompatibleTypesExpression,
         IncompatibleTypesAssignment,
+        IncompatibleCurrencies,
     }
 
     public static class ErrorTypeExtension
@@ -83,7 +86,7 @@ namespace ANTLR_Test.Classes
                 return true;
             }
 
-            Logger.DebugLine($"Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
+            Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}");
             //Check, wether unspecified errors should be ignore checked
             if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && data.CheckIgnoreForUnspecifiedErrors)
             {

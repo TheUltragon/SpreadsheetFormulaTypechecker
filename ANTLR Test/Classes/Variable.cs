@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace ANTLR_Test.Classes
 {
+
+    
+
     public class ValueBase
     {
         public virtual VarType GetVarType()
@@ -195,9 +198,9 @@ namespace ANTLR_Test.Classes
         Decimal,
         Date,
         Currency,
+        Char,
         None,
         Unknown,
-        Char
     }
 
     public static class VarTypeExtensions

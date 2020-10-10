@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using ANTLR_Test.Classes;
 
 namespace ANTLR_Test
@@ -17,7 +18,7 @@ namespace ANTLR_Test
             //Logger.SetOutputFile("Log.txt");
             Logger.SetMinDebugLevelToConsole(0);
 
-            Import();
+            //Import();
             TestSuite();
         }
 
@@ -43,9 +44,10 @@ namespace ANTLR_Test
 
                 SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
                 SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
-
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 Logger.DebugLine(reader.ReadToEnd(), 1);
+                Logger.DebugLine("", 1);
+                PrintContext(context, 1, 0);
                 Logger.DebugLine("", 1);
                 Logger.DebugLine("Parsing has returned result: " + visitor.Visit(context), 1);
                 Logger.DebugLine("", 1);
@@ -55,6 +57,22 @@ namespace ANTLR_Test
                 }
                 Console.ReadLine();
                 Logger.DebugLine("", 1);
+            }
+        }
+
+        static void PrintContext(IParseTree context, int debugLevel, int depth)
+        {
+            string prefix = "";
+            for(int i = 0; i<depth; i++)
+            {
+                prefix += " ";
+            }
+
+            Logger.DebugLine(prefix + context.GetText(), debugLevel);
+            for(int i = 0; i<context.ChildCount; i++)
+            {
+                var child = context.GetChild(i);
+                PrintContext(child, debugLevel, depth + 1);
             }
         }
 

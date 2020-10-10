@@ -15,7 +15,14 @@ namespace ANTLR_Test.Classes
         public AbstractFormulas(SpreadsheetVisitor visitor)
         {
             Visitor = visitor;
-            //TODO: Register all AbstractFormula Types once finished
+
+            //Register all AbstractFormula derivates
+            //TODO: Slow in practice (?), and only needs to be calculated once (list doesnt change)!
+            var AbstractFunctionFormulaTypes = ReflectiveEnumerator.GetEnumerableOfType<AbstractFormula>();
+            foreach (var tp in AbstractFunctionFormulaTypes)
+            {
+                Register(tp.GetType(), tp.ExpressionType);
+            }
         }
 
         public void Register(Type formulaType, Type expType)
@@ -27,7 +34,19 @@ namespace ANTLR_Test.Classes
             var abstractFormula = TranslateFormula(formula, out bool success);
             if (success)
             {
+                Logger.DebugLine($"Registered abstractFormula {abstractFormula.ToString()}");
+                abstractFormula.Simplify();
+                Logger.DebugLine($"Simplified: {abstractFormula.ToString()}");
+
                 CellFormulas.Add(cell, abstractFormula);
+            }
+        }
+
+        public void Simplify()
+        {
+            foreach(var formula in CellFormulas.Values)
+            {
+                formula.Simplify();
             }
         }
 

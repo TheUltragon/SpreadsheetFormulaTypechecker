@@ -85,6 +85,7 @@
     <Compile Include="Classes\AbstractZones.cs" />
     <Compile Include="Classes\DataRepository.cs" />
     <Compile Include="Classes\ErrorHandler.cs" />
+    <Compile Include="Classes\ReflectiveEnumerator.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelInteropImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelReaderImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\SpreadSheetImporter.cs" />
@@ -128,6 +129,9 @@
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
     <None Include="Testsuite\Bad\test-bad1.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\test-formulas.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Testsuite\Good\test-good2.xl">

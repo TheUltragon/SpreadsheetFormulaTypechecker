@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,11 +27,23 @@ namespace ANTLR_Test.Classes
         {
             Node = Node.Simplify();
         }
+
+        public override string ToString()
+        {
+            if(Node != null)
+            {
+                return Node.ToString();
+            }
+            else
+            {
+                return "Empty Abstract Formula";
+            }
+        }
     }
 
-    public class AbstractVarExp : AbstractFormula
+    public class AbstractVarFormula : AbstractFormula
     {
-        public override Type ExpressionType => typeof(SpreadsheetParser.VarExpContext);
+        public override Type ExpressionType => typeof(SpreadsheetParser.ValueExpContext);
 
         public override void Translate()
         {
@@ -38,9 +51,11 @@ namespace ANTLR_Test.Classes
             var type = Visitor.LastType;
             Node = new AbstractTypeNode(type);
         }
+
+        
     }
 
-    public class AbstractCellExp : AbstractFormula
+    public class AbstractCellFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.CellExpContext);
 
@@ -58,7 +73,7 @@ namespace ANTLR_Test.Classes
             }
 
             var left = getValueExp(cellExp.left);
-            var right = getValueExp(cellExp.left);
+            var right = getValueExp(cellExp.right);
             if (left is SpreadsheetParser.ValueExpContext && right is SpreadsheetParser.ValueExpContext)
             {
                 var leftParam = (SpreadsheetParser.ValueExpContext)left;
@@ -105,7 +120,7 @@ namespace ANTLR_Test.Classes
         }
     }
 
-    public class AbstractAddExp : AbstractFormula
+    public class AbstractAddFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.AddExpContext);
 
@@ -121,32 +136,71 @@ namespace ANTLR_Test.Classes
         }
     }
 
-    public abstract class AbstractFunctionExp : AbstractFormula
+    public static class AbstractFunctionFormulaContent
     {
-        public override Type ExpressionType => typeof(SpreadsheetParser.FunctionExpContext);
-
-        Dictionary<Type, Type> formulaDict = new Dictionary<Type, Type>();
-        public SpreadsheetVisitor Visitor { get; set; }
-        private AbstractFunctionExp AbstractExp;
-
-        public void Register(Type functionFormulaType, Type expType)
-        {
-            formulaDict.Add(expType, functionFormulaType);
-        }
-
-        public SpreadsheetParser.FexpContext Fexp
+        private static bool initialized = false;
+        private static Dictionary<Type, Type> formulas = new Dictionary<Type, Type>();
+        public static Dictionary<Type, Type> Formulas
         {
             get
             {
-                return ((SpreadsheetParser.FunctionExpContext)Exp).fun;
+                Init();
+                return formulas;
+            }
+        }
+        public static void Init()
+        {
+            if (initialized)
+            {
+                return;
+            }
+
+            initialized = true;
+
+            //TODO: Slow in practice (?), and only needs to be calculated once (list doesnt change)!
+            var AbstractFunctionFormulaTypes = ReflectiveEnumerator.GetEnumerableOfType<AbstractFunctionFormula>();
+            foreach (var tp in AbstractFunctionFormulaTypes)
+            {
+                Register(tp.GetType(), tp.FunctionType);
             }
         }
 
+        public static void Register(Type functionFormulaType, Type expType)
+        {
+            formulas.Add(expType, functionFormulaType);
+        }
+    }
+
+    public abstract class AbstractFunctionFormula : AbstractFormula
+    {
+        public override Type ExpressionType => typeof(SpreadsheetParser.FunctionExpContext);
+        private bool initialized = false;
+
+        private AbstractFunctionFormula AbstractExp;
+
+        public SpreadsheetParser.FexpContext Fexp => ((SpreadsheetParser.FunctionExpContext)Exp).fun;
+        
+
         public override void Translate()
         {
-            //TODO: Use the right one of the registered AbstractFunctionExpressions to translate this function
-            //Use AbstractExp for that
-            throw new NotImplementedException();
+            bool success = AbstractFunctionFormulaContent.Formulas.TryGetValue(Fexp.GetType(), out Type formulaType);
+            if (success)
+            {
+                AbstractExp = (AbstractFunctionFormula)Activator.CreateInstance(formulaType);
+                AbstractExp.Exp = Exp;
+                AbstractExp.Visitor = Visitor;
+                AbstractExp.CellFormulas = CellFormulas;
+                AbstractExp.Formulas = Formulas;
+
+                AbstractExp.TranslateFunction();
+
+                Node = AbstractExp.Node;
+            }
+            else
+            {
+                Logger.DebugLine($"Error - Couldnt Translate Function Formula, formula Type {Fexp.GetType()} not registered yet.");
+                return;
+            }
         }
 
         public abstract Type FunctionType { get; }
@@ -154,7 +208,7 @@ namespace ANTLR_Test.Classes
         public abstract void TranslateFunction();
     }
 
-    public class AbstractProductExp : AbstractFunctionExp
+    public class AbstractProductFormula : AbstractFunctionFormula
     {
         public override Type FunctionType => typeof(SpreadsheetParser.ProdFuncContext);
 
@@ -163,8 +217,10 @@ namespace ANTLR_Test.Classes
             var prodExp = (SpreadsheetParser.ProdFuncContext)Fexp;
             bool success = true;
             List<AbstractFormulaNode> formulaNodes = new List<AbstractFormulaNode>();
-            foreach(var child in prodExp.children)
+            var args = prodExp.anyArg();
+            foreach(var child in args.children)
             {
+                Logger.Debug("Translation, ");
                 var formula = Formulas.TranslateFormula((SpreadsheetParser.ExpContext)child, out bool successFormula);
                 formulaNodes.Add(formula.Node);
                 success &= successFormula;
