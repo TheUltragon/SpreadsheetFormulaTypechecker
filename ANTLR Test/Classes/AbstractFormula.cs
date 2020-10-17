@@ -218,12 +218,16 @@ namespace ANTLR_Test.Classes
             bool success = true;
             List<AbstractFormulaNode> formulaNodes = new List<AbstractFormulaNode>();
             var args = prodExp.anyArg();
-            foreach(var child in args.children)
+            for(int i= 0; i<args.ChildCount; i++)
             {
+                var context = args.GetRuleContext<SpreadsheetParser.ExpContext>(i);
                 Logger.Debug("Translation, ");
-                var formula = Formulas.TranslateFormula((SpreadsheetParser.ExpContext)child, out bool successFormula);
-                formulaNodes.Add(formula.Node);
-                success &= successFormula;
+                if(context != null)
+                {
+                    var formula = Formulas.TranslateFormula(context, out bool successFormula);
+                    formulaNodes.Add(formula.Node);
+                    success &= successFormula;
+                }
             }
             
             if (success)

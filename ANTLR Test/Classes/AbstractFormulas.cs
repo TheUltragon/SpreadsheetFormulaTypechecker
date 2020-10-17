@@ -52,6 +52,12 @@ namespace ANTLR_Test.Classes
 
         public AbstractFormula TranslateFormula(SpreadsheetParser.ExpContext formula, out bool success)
         {
+            if(formula == null)
+            {
+                Logger.DebugLine($"Error - Formula was null.");
+                success = false;
+                return null;
+            }
             success = formulaDict.TryGetValue(formula.GetType(), out Type formulaType);
             if (success)
             {
