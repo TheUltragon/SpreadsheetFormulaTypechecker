@@ -100,7 +100,9 @@ namespace ANTLR_Test.Classes
                 {
                     var tp = ((AbstractTypeNode)newChild).Type;
                     if (VarTypeExtensions.IsNumeric(tp)){
-                        highestType = VarTypeExtensions.GetHighestNumericType(tp, highestType);
+                        var originalHighest = highestType;
+                        highestType = VarTypeExtensions.GetHighestNumericType(tp, originalHighest);
+                        Logger.DebugLine($"originalHighest: {originalHighest}, tp: {tp}, HighestType: {highestType}");
                     }
                     else
                     {
@@ -117,6 +119,7 @@ namespace ANTLR_Test.Classes
             //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
             if(simplifySuccess)
             {
+                Logger.DebugLine($"HighestType: {highestType}");
                 return new AbstractTypeNode(highestType);
             }
             else

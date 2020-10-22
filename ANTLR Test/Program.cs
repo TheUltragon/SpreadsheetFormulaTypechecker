@@ -18,15 +18,44 @@ namespace ANTLR_Test
             //Logger.SetOutputFile("Log.txt");
             Logger.SetMinDebugLevelToConsole(0);
 
-            //Import();
-            TestSuite();
+            Logger.DebugLine("Program has started.", 2);
+
+            //Main Part for the Program
+            Import();
+            //TestSuite();
+
+            Logger.DebugLine("Program has ended. Press Enter to close it", 2);
+            Console.ReadLine();
+        }
+
+        static List<string> ListFilesRecursively(string sDir)
+        {
+            List<string> files = new List<string>();
+            try
+            {
+                foreach (string d in Directory.GetDirectories(sDir))
+                {
+                    foreach (string f in Directory.GetFiles(d))
+                    {
+                        files.Add(f);
+                    }
+                    var newFiles = ListFilesRecursively(d);
+                    files.AddRange(newFiles);
+                }
+            }
+            catch (System.Exception excpt)
+            {
+                Console.WriteLine(excpt.Message);
+            }
+
+            return files;
         }
 
         static void TestSuite()
         {
             List<string> files = new List<string>();
-            files = files.Concat(Directory.EnumerateFiles("Testsuite\\Good")).ToList();
-            files = files.Concat(Directory.EnumerateFiles("Testsuite\\Bad")).ToList();
+            files.AddRange(ListFilesRecursively("Testsuite\\Good"));
+            files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
             Logger.DebugLine($"Going to parse {files.Count} files");
             Logger.DebugLine("");
 
@@ -46,14 +75,27 @@ namespace ANTLR_Test
                 SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 Logger.DebugLine(reader.ReadToEnd(), 1);
+                Logger.DebugLine("====================================================", 1);
                 Logger.DebugLine("", 1);
-                PrintContext(context, 1, 0);
-                Logger.DebugLine("", 1);
-                Logger.DebugLine("Parsing has returned result: " + visitor.Visit(context), 1);
-                Logger.DebugLine("", 1);
-                foreach (var value in visitor.Repository.CellTypes)
+                PrintContext(context, 0, 0);
+                Logger.DebugLine("", 0);
+                bool result = visitor.Visit(context);
+                Logger.DebugLine("Parsing has returned result: " + result, 1);
+                if (result)
                 {
-                    Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}", 1);
+                    Logger.DebugLine("", 1);
+                    Logger.DebugLine("", 1);
+                    Logger.DebugLine("CellTypes:", 1);
+                    foreach (var value in visitor.Repository.CellTypes)
+                    {
+                        Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}", 1);
+                    }
+                    Logger.DebugLine("", 1);
+                    Logger.DebugLine("CellFormulas:", 1);
+                    foreach(var formula in visitor.Repository.Formulas.CellFormulas)
+                    {
+                        Logger.DebugLine($"{formula.Key.Item1}, {formula.Key.Item2}: {formula.Value.ToString()}", 1);
+                    }
                 }
                 Console.ReadLine();
                 Logger.DebugLine("", 1);

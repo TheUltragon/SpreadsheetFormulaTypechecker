@@ -86,12 +86,19 @@
     <Compile Include="Classes\DataRepository.cs" />
     <Compile Include="Classes\ErrorHandler.cs" />
     <Compile Include="Classes\ReflectiveEnumerator.cs" />
+    <Compile Include="Classes\SpreadSheetImport\ExcelFormulaVisitor.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelInteropImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelReaderImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\SpreadSheetImporter.cs" />
     <Compile Include="Classes\Logger.cs" />
     <Compile Include="Classes\SpreadSheetImport\LinqToExcelImporter.cs" />
     <Compile Include="Classes\TypecheckVisitor.cs" />
+    <Compile Include="ExcelFormula.g4.lexer.cs">
+      <DependentUpon>ExcelFormula.g4</DependentUpon>
+    </Compile>
+    <Compile Include="ExcelFormula.g4.parser.cs">
+      <DependentUpon>ExcelFormula.g4</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\Variable.cs" />
@@ -123,21 +130,40 @@
     <None Include="Data\Corpus\_h8d62ck10a9im6rrddli#A7DD7.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Antlr4 Include="ExcelFormula.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
+    </Antlr4>
     <None Include="packages.config" />
     <Antlr4 Include="Spreadsheet.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
-    <None Include="Testsuite\Bad\test-bad1.xl">
+    <None Include="Testsuite\Bad\Intermediate Language\test-bad1.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Testsuite\Good\test-formulas.xl">
+    <None Include="Testsuite\Good\Abstract Formulas\test-assign.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Testsuite\Good\test-good2.xl">
+    <None Include="Testsuite\Good\Abstract Formulas\test-add.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Testsuite\Good\test-good1.xl">
+    <None Include="Testsuite\Good\Abstract Formulas\test-prod.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\Abstract Formulas\test-general.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\Intermediate Language\test-statements1.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\Intermediate Language\test-expressions1.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\Intermediate Language\test-basic2.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\Intermediate Language\test-basic1.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -187,6 +213,7 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

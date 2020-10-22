@@ -7,6 +7,7 @@ using Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Core;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Globalization;
 
 namespace ANTLR_Test.Classes
 {
@@ -150,8 +151,22 @@ namespace ANTLR_Test.Classes
                 {
                     var value = valueArray[i, j];
                     var formula = formulaArray[i, j];
-                    
-                    if (value != null && formula != null && formula.Equals(value.ToString()))
+
+                    var equals = false;
+
+                    if(value != null && formula != null)
+                    {
+                        if (value is double)
+                        {
+                            equals = formula.Equals(((double)value).ToString("G", CultureInfo.InvariantCulture));
+                        }
+                        else
+                        {
+                            equals = formula.Equals(value.ToString());
+                        }
+                    }
+
+                    if (equals)
                     {
                         Logger.DebugLine($"{i}, {j}: Value equals Formula");
                     }

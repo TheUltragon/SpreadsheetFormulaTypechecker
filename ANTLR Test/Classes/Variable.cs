@@ -6,14 +6,11 @@ using System.Threading.Tasks;
 
 namespace ANTLR_Test.Classes
 {
-
-    
-
     public class ValueBase
     {
         public virtual VarType GetVarType()
         {
-            return VarType.None;
+            return VarType.Unknown;
         }
     }
 
@@ -139,7 +136,7 @@ namespace ANTLR_Test.Classes
         }
         public override VarType GetVarType()
         {
-            return VarType.None;
+            return VarType.Empty;
         }
     }
 
@@ -201,6 +198,7 @@ namespace ANTLR_Test.Classes
         Char,
         None,
         Unknown,
+        Empty,
     }
 
     public static class VarTypeExtensions

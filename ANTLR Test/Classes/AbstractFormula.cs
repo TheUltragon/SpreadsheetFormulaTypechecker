@@ -174,7 +174,6 @@ namespace ANTLR_Test.Classes
     public abstract class AbstractFunctionFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.FunctionExpContext);
-        private bool initialized = false;
 
         private AbstractFunctionFormula AbstractExp;
 
@@ -218,9 +217,8 @@ namespace ANTLR_Test.Classes
             bool success = true;
             List<AbstractFormulaNode> formulaNodes = new List<AbstractFormulaNode>();
             var args = prodExp.anyArg();
-            for(int i= 0; i<args.ChildCount; i++)
+            foreach(var context in args._expr)
             {
-                var context = args.GetRuleContext<SpreadsheetParser.ExpContext>(i);
                 Logger.Debug("Translation, ");
                 if(context != null)
                 {

@@ -1088,11 +1088,11 @@ namespace ANTLR_Test.Classes
             Logger.DebugLine("Visit Prod Exp");
             bool result = true;
             var args = context.anyArg();
-            VarType type = VarType.None;
-            foreach (var child in args.children)
+            VarType type = VarType.Int;
+            foreach(var child in args._expr)
             {
                 Visit(child);
-                if(type != VarType.None && !LastType.IsNumeric())
+                if(type != VarType.Empty && !LastType.IsNumeric())
                 {
                     result = Handler.ThrowError(
                         context.Start.Line,
@@ -1104,13 +1104,16 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    type = VarTypeExtensions.GetHighestNumericType(LastType, type);
+                    var originalType = type;
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, originalType);
+                    Logger.DebugLine($"Child: {child.GetText()}, originalType: {originalType}, LastType: {LastType}, type: {type}");
                 }
             }
 
             if (result)
             {
                 LastType = type;
+                Logger.DebugLine($"ResultType: {LastType}");
             }
 
             return result;
@@ -1121,11 +1124,11 @@ namespace ANTLR_Test.Classes
             Logger.DebugLine("Visit Sum Exp");
             bool result = true;
             var args = context.anyArg();
-            VarType type = VarType.None;
-            foreach (var child in args.children)
+            VarType type = VarType.Int;
+            foreach(var child in args._expr)
             {
                 Visit(child);
-                if (type != VarType.None && !LastType.IsNumeric())
+                if (type != VarType.Empty && !LastType.IsNumeric())
                 {
                     result = Handler.ThrowError(
                         context.Start.Line,
@@ -1137,7 +1140,9 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    type = VarTypeExtensions.GetHighestNumericType(LastType, type);
+                    var oldType = type;
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, oldType);
+                    Logger.DebugLine($"Sum: LastType: {LastType}, oldType: {oldType}, type: {type}");
                 }
             }
 
@@ -1180,7 +1185,7 @@ namespace ANTLR_Test.Classes
         public override bool VisitEmptyVal([NotNull] SpreadsheetParser.EmptyValContext context)
         {
             LastValue = new EmptyValue();
-            LastType = VarType.Unknown;
+            LastType = VarType.Empty;
             return true;
         }
 

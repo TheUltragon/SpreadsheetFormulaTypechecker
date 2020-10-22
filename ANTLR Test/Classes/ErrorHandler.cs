@@ -75,18 +75,18 @@ namespace ANTLR_Test.Classes
         //Returns, wether the error really was an error (false) or wether it was ignored (true)
         public bool ThrowError(int line, int column, bool ignoreable, ErrorType type, string specifier, string payload)
         {
-            Logger.DebugLine($"");
+            Logger.DebugLine($"", 10);
             //Check, wether this error should be ignored
             if (ignoreable && !CheckIfErrorToBeThrown(type, specifier)){
                 //Check if ignored errors should be reported
                 if(data.LogIgnoredErrors)
                 {
-                    Logger.DebugLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}");
+                    Logger.DebugLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}", 10);
                 }
                 return true;
             }
 
-            Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}");
+            Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 10);
             //Check, wether unspecified errors should be ignore checked
             if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && data.CheckIgnoreForUnspecifiedErrors)
             {
@@ -107,7 +107,7 @@ namespace ANTLR_Test.Classes
                 $"\n    'y' to ignore this type and specifier combination, " +
                 $"\n    'Y' to ignore the whole type, " +
                 $"\n    'n' to keep reporting this type-specifier combination and " +
-                $"\n    'N' to keep reporting this error type, regardless of combination.");
+                $"\n    'N' to keep reporting this error type, regardless of combination.", 10);
             while (true)
             {
                 var input = Console.ReadLine();
@@ -133,7 +133,7 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    Logger.DebugLine($"Unknown input, please input either 'Y', 'y', 'N' or 'n'.");
+                    Logger.DebugLine($"Unknown input, please input either 'Y', 'y', 'N' or 'n'.", 10);
                 }
             }
         }

@@ -1,30 +1,17 @@
-grammar Spreadsheet;
+grammar ExcelFormula;
 
 /*
  * Parser Rules
  */
 
-spreadSheet
-	:	statements=stm+
+excelExpr
+	: exp
 	;
-
-stm
-	: ';'															#emptyStm
-	| 'C[' left=exp '|' right=exp ']' 'is' tp=type					#cellTypeStm
-	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellValueStm
-	| 'C[' left=exp '|' right=exp ']' '=' '(' content=exp ')'		#cellFormulaStm
-	| tp=type IDENT '=' val=exp										#assignStm
-	| 'eval'														#evalStm
-	| 'if' check=exp 'then' trueStm=stm 'else' falseStm=stm			#ifStm
-	| 'while' check=exp 'do' loopStm=stm							#whileStm
-	;
-
 
 exp
 	: fun=fexp														#functionExp
 	| val=value														#valueExp
-	| IDENT															#varExp
-	| 'C[' left=aexp '|' right=aexp ']'								#cellExp
+	| cell=celladress												#cellExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
 	| left=exp '%' right=exp										#modExp
@@ -64,25 +51,16 @@ anyArg
 	: '(' expr+=exp (',' expr+=exp)* ')'
 	;
 
-aexp
-	: '->' param=exp												#posAExp
-	| '<-' param=exp												#negAExp
-	| param=exp														#baseAExp
-	;
-
-type
-	: 'bool'														#boolTp
-	| 'char'														#charTp
-	| 'int'															#intTp
-	| 'decimal'														#decimalTp
-	| 'string'														#stringTp
-	| 'currency'													#currencyTp
-	| 'date'														#dateTp
+celladress
+	: CELLROW CELLCOLUMN											#baseAdress
+	| '$' CELLROW CELLCOLUMN										#rowLockAdress
+	| CELLROW '$' CELLCOLUMN										#columnLockAdress
+	| '$' CELLROW '$' CELLCOLUMN									#bothLockAdress
 	;
 
 value
-	: 'true'														#trueVal
-	| 'false'														#falseVal
+	: 'True'														#trueVal
+	| 'False'														#falseVal
 	| CHAR															#charVal
 	| INT															#intVal
 	| DECIMAL														#decimalVal
@@ -119,6 +97,22 @@ COMMENT
 
 EMPTY
 	: '\\'
+	;
+
+CELL
+	: [$]? CELLROW [$]? CELLCOLUMN
+	;
+
+CELLCOLUMN
+	: NONFRACTPOSNUMBER+
+	;
+
+CELLROW
+	: UPPERCHAR+
+	;
+
+UPPERCHAR
+	: [A-Z]
 	;
 
 CHAR
