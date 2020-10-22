@@ -93,12 +93,6 @@
     <Compile Include="Classes\Logger.cs" />
     <Compile Include="Classes\SpreadSheetImport\LinqToExcelImporter.cs" />
     <Compile Include="Classes\TypecheckVisitor.cs" />
-    <Compile Include="ExcelFormula.g4.lexer.cs">
-      <DependentUpon>ExcelFormula.g4</DependentUpon>
-    </Compile>
-    <Compile Include="ExcelFormula.g4.parser.cs">
-      <DependentUpon>ExcelFormula.g4</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\Variable.cs" />
@@ -106,28 +100,28 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Data\Corpus\02rise.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Data\Corpus\03PFMJOURnalBOOKSFina#A7ED3.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Corpus\03Q1MAJORE2.xls">
+    <None Include="Data\Corpus\BKUP\02rise.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Corpus\03Q3MAJORE2_2.xls">
+    <None Include="Data\Corpus\BKUP\03PFMJOURnalBOOKSFina#A7ED3.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Corpus\BKUP\03Q1MAJORE2.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Corpus\BKUP\03Q3MAJORE2_2.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Data\Corpus\12-31-03%25207%2520Year%2520F#A7AD8.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Corpus\4.f._FinReport.xls">
+    <None Include="Data\Corpus\BKUP\4.f._FinReport.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Corpus\5_Year_Summary3.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\_h8d62ck10a9im6rrddli#A7DD7.xls">
+    <None Include="Data\Corpus\BKUP\5_Year_Summary3.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Antlr4 Include="ExcelFormula.g4">
@@ -213,7 +207,11 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Data\Imports\NON-EMPTY.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

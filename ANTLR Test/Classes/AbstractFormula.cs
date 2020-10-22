@@ -136,6 +136,22 @@ namespace ANTLR_Test.Classes
         }
     }
 
+    public class AbstractSubFormula : AbstractFormula
+    {
+        public override Type ExpressionType => typeof(SpreadsheetParser.SubExpContext);
+
+        public override void Translate()
+        {
+            var addExp = (SpreadsheetParser.SubExpContext)Exp;
+            var leftFormula = Formulas.TranslateFormula(addExp.left, out bool successLeft);
+            var rightFormula = Formulas.TranslateFormula(addExp.right, out bool successRight);
+            if (successLeft && successRight)
+            {
+                Node = new AbstractSubNode(leftFormula.Node, rightFormula.Node);
+            }
+        }
+    }
+
     public static class AbstractFunctionFormulaContent
     {
         private static bool initialized = false;
@@ -171,7 +187,7 @@ namespace ANTLR_Test.Classes
         }
     }
 
-    public abstract class AbstractFunctionFormula : AbstractFormula
+    public class AbstractFunctionFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.FunctionExpContext);
 
@@ -202,9 +218,9 @@ namespace ANTLR_Test.Classes
             }
         }
 
-        public abstract Type FunctionType { get; }
+        public virtual Type FunctionType { get; }
 
-        public abstract void TranslateFunction();
+        public virtual void TranslateFunction() { }
     }
 
     public class AbstractProductFormula : AbstractFunctionFormula
@@ -228,6 +244,35 @@ namespace ANTLR_Test.Classes
                 }
             }
             
+            if (success)
+            {
+                Node = new AbstractProductNode(formulaNodes);
+            }
+        }
+    }
+
+
+    public class AbstractSumFormula : AbstractFunctionFormula
+    {
+        public override Type FunctionType => typeof(SpreadsheetParser.SumFuncContext);
+
+        public override void TranslateFunction()
+        {
+            var sumExp = (SpreadsheetParser.SumFuncContext)Fexp;
+            bool success = true;
+            List<AbstractFormulaNode> formulaNodes = new List<AbstractFormulaNode>();
+            var args = sumExp.anyArg();
+            foreach (var context in args._expr)
+            {
+                Logger.Debug("Translation, ");
+                if (context != null)
+                {
+                    var formula = Formulas.TranslateFormula(context, out bool successFormula);
+                    formulaNodes.Add(formula.Node);
+                    success &= successFormula;
+                }
+            }
+
             if (success)
             {
                 Node = new AbstractProductNode(formulaNodes);

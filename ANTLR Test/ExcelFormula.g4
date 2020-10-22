@@ -5,13 +5,13 @@ grammar ExcelFormula;
  */
 
 excelExpr
-	: exp
+	: '=' expr=exp
 	;
 
 exp
 	: fun=fexp														#functionExp
-	| val=value														#valueExp
 	| cell=celladress												#cellExp
+	| val=value														#valueExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
 	| left=exp '%' right=exp										#modExp
@@ -40,22 +40,23 @@ oneArg
 	;
 
 twoArg
-	: '(' exp ',' exp ')'
+	: '(' exp1=exp ',' exp2=exp ')'
 	;
 
 threeArg
-	: '(' exp ',' exp ',' exp ')'
+	: '(' exp1=exp ',' exp2=exp ',' exp3=exp ')'
 	;
 
 anyArg
-	: '(' expr+=exp (',' expr+=exp)* ')'
+	: '(' expr+=exp (',' expr+=exp)* ')'							#anyArgBase
+	| '(' left=celladress ':' right=celladress ')'								#anyArgSeq
 	;
 
 celladress
-	: CELLROW CELLCOLUMN											#baseAdress
-	| '$' CELLROW CELLCOLUMN										#rowLockAdress
-	| CELLROW '$' CELLCOLUMN										#columnLockAdress
-	| '$' CELLROW '$' CELLCOLUMN									#bothLockAdress
+	: row=CELLROW column=CELLCOLUMN											#baseAdress
+	| '$' row=CELLROW column=CELLCOLUMN										#rowLockAdress
+	| row=CELLROW '$' column=CELLCOLUMN										#columnLockAdress
+	| '$' row=CELLROW '$' column=CELLCOLUMN									#bothLockAdress
 	;
 
 value
@@ -99,29 +100,17 @@ EMPTY
 	: '\\'
 	;
 
-CELL
-	: [$]? CELLROW [$]? CELLCOLUMN
+CELLROW
+	: [A-Z]+
 	;
 
 CELLCOLUMN
 	: NONFRACTPOSNUMBER+
 	;
 
-CELLROW
-	: UPPERCHAR+
-	;
-
-UPPERCHAR
-	: [A-Z]
-	;
-
 CHAR
-	: [a-zA-Z]
+	: '\''[a-zA-Z]'\''
 	;
-
-IDENT
-    : [a-zA-Z_][a-zA-Z_0-9]*
-    ;
 
 INT     
 	: [-+]?[0-9]+

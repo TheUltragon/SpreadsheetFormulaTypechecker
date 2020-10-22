@@ -16,7 +16,7 @@ namespace ANTLR_Test.Classes
             List<T> objects = new List<T>();
             foreach (Type type in
                 Assembly.GetAssembly(typeof(T)).GetTypes()
-                .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T))))
+                .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)) && myType.BaseType == typeof(T)))
             {
                 objects.Add((T)Activator.CreateInstance(type, constructorArgs));
             }

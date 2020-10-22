@@ -16,15 +16,16 @@ namespace ANTLR_Test
         {
             Logger.SetActive(true);
             //Logger.SetOutputFile("Log.txt");
-            Logger.SetMinDebugLevelToConsole(0);
+            Logger.SetMinDebugLevelToConsole(1);
 
-            Logger.DebugLine("Program has started.", 2);
+            Logger.DebugLine("Program has started.", 10);
 
             //Main Part for the Program
             Import();
-            //TestSuite();
+            TestSuite();
 
-            Logger.DebugLine("Program has ended. Press Enter to close it", 2);
+            Logger.SaveToFile();
+            Logger.DebugLine("Program has ended. Press Enter to close it", 10);
             Console.ReadLine();
         }
 
@@ -33,12 +34,12 @@ namespace ANTLR_Test
             List<string> files = new List<string>();
             try
             {
+                foreach (string f in Directory.GetFiles(sDir))
+                {
+                    files.Add(f);
+                }
                 foreach (string d in Directory.GetDirectories(sDir))
                 {
-                    foreach (string f in Directory.GetFiles(d))
-                    {
-                        files.Add(f);
-                    }
                     var newFiles = ListFilesRecursively(d);
                     files.AddRange(newFiles);
                 }
@@ -54,6 +55,7 @@ namespace ANTLR_Test
         static void TestSuite()
         {
             List<string> files = new List<string>();
+            files.AddRange(ListFilesRecursively("Data\\Imports"));
             files.AddRange(ListFilesRecursively("Testsuite\\Good"));
             files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
             Logger.DebugLine($"Going to parse {files.Count} files");
@@ -61,9 +63,19 @@ namespace ANTLR_Test
 
             foreach (var file in files)
             {
-                Logger.DebugLine("====================================================", 1);
-                Logger.DebugLine($"Parsing file {file}", 1);
-                Logger.DebugLine("====================================================", 1);
+
+                var ext = Path.GetExtension(file);
+                if(ext != ".xl")
+                {
+                    Logger.DebugLine("====================================================", 10);
+                    Logger.DebugLine($"Skipping file {file}, invalid extension!", 10);
+                    Logger.DebugLine("====================================================", 10);
+                    continue;
+                }
+
+                Logger.DebugLine("====================================================", 10);
+                Logger.DebugLine($"Parsing file {file}", 10);
+                Logger.DebugLine("====================================================", 10);
                 StreamReader reader = File.OpenText(file);
                 ErrorHandler handler = new ErrorHandler();
                 AntlrInputStream inputStream = new AntlrInputStream(reader);
@@ -75,30 +87,32 @@ namespace ANTLR_Test
                 SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 Logger.DebugLine(reader.ReadToEnd(), 1);
-                Logger.DebugLine("====================================================", 1);
-                Logger.DebugLine("", 1);
+                Logger.DebugLine("====================================================", 10);
+                Logger.DebugLine("", 10);
                 PrintContext(context, 0, 0);
                 Logger.DebugLine("", 0);
                 bool result = visitor.Visit(context);
-                Logger.DebugLine("Parsing has returned result: " + result, 1);
+                Logger.DebugLine("Parsing has returned result: " + result, 10);
                 if (result)
                 {
-                    Logger.DebugLine("", 1);
-                    Logger.DebugLine("", 1);
-                    Logger.DebugLine("CellTypes:", 1);
+                    Logger.DebugLine("", 5);
+                    Logger.DebugLine("", 5);
+                    Logger.DebugLine("CellTypes:", 5);
                     foreach (var value in visitor.Repository.CellTypes)
                     {
-                        Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}", 1);
+                        Logger.DebugLine($"{value.Key.Item1}, {value.Key.Item2}: {value.Value.Type.ToString()}", 5);
                     }
-                    Logger.DebugLine("", 1);
-                    Logger.DebugLine("CellFormulas:", 1);
+                    Logger.DebugLine("", 5);
+                    Logger.DebugLine("CellFormulas:", 5);
                     foreach(var formula in visitor.Repository.Formulas.CellFormulas)
                     {
-                        Logger.DebugLine($"{formula.Key.Item1}, {formula.Key.Item2}: {formula.Value.ToString()}", 1);
+                        Logger.DebugLine($"{formula.Key.Item1}, {formula.Key.Item2}: {formula.Value.ToString()}", 5);
                     }
                 }
+                Logger.DebugLine("===================================", 10);
+                Logger.DebugLine("Enter to continue", 10);
                 Console.ReadLine();
-                Logger.DebugLine("", 1);
+                Logger.DebugLine("===================================", 10);
             }
         }
 

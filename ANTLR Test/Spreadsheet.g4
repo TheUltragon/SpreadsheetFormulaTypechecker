@@ -5,7 +5,7 @@ grammar Spreadsheet;
  */
 
 spreadSheet
-	:	statements=stm+
+	:	statements+=stm+
 	;
 
 stm

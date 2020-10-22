@@ -8,24 +8,26 @@ using Microsoft.Office.Core;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Globalization;
+using Antlr4.Runtime;
 
 namespace ANTLR_Test.Classes
 {
     class ExcelInteropImporter : SpreadSheetImporter
     {
+        string convertedText = "";
         //Mostly copied from: https://www.dotnetperls.com/excel
         public override void ImportFile(string path)
         {
             Application app = new Application();
             Workbook workBook = app.Workbooks.Open(Path.GetFullPath(path));
 
-            handleWorkBook(workBook);
+            handleWorkBook(workBook, path);
 
             workBook.Close(false, path, null);
             Marshal.ReleaseComObject(workBook);
         }
 
-        private void handleWorkBook(Workbook workBook)
+        private void handleWorkBook(Workbook workBook, string path)
         {
             int numSheets = workBook.Sheets.Count;
             Logger.DebugLine($"Sheets: {numSheets}", 1);
@@ -61,12 +63,29 @@ namespace ANTLR_Test.Classes
                 //
                 if(valueArray != null && formulaArray != null)
                 {
+                    convertedText = "";
+
                     ProcessObjects(valueArray, formulaArray);
+                    //Add Implicit eval at end of file
+                    convertedText += "eval\n";
+
+                    Logger.DebugLine($"=========================================", 10);
+                    Logger.DebugLine($"Imported File Workbook {sheetNum}", 10);
+                    Logger.DebugLine($"{convertedText}", 10);
+                    Logger.DebugLine($"=========================================", 10);
+
+                    string newPath = path.Replace("Corpus", "Imports").Split('.').First() + $"_WB{sheetNum}.xl";
+                    File.WriteAllText(newPath, convertedText);
+                    Logger.DebugLine("Wrote Import to file " + newPath, 10);
                 }
                 else
                 {
                     Logger.Debug("ValueArray or FormulaArray was null!");
                 }
+
+
+
+
             }
         }
 
@@ -132,6 +151,21 @@ namespace ANTLR_Test.Classes
             }
         }
 
+        private void addConvertedValue(object value, int i, int j)
+        {
+            convertedText += $"C[{j}|{i}] = ";
+            if (value is string)
+            {
+                convertedText += $"\"{(string)value}\"";
+            }
+            else
+            {
+                convertedText += value.ToString();
+            }
+
+            convertedText += "\n";
+        }
+
         private void compareArrays(object[,] valueArray, object[,] formulaArray)
         {
             var x = valueArray.GetLength(0);
@@ -168,15 +202,17 @@ namespace ANTLR_Test.Classes
 
                     if (equals)
                     {
-                        Logger.DebugLine($"{i}, {j}: Value equals Formula");
+                        Logger.DebugLine($"{j}, {i}: Value equals Formula");
+                        addConvertedValue(value, i, j);
                     }
                     else if (value == formula)
                     {
-                        Logger.DebugLine($"{i}, {j}: Value equals Formula");
+                        Logger.DebugLine($"{j}, {i}: Value == Formula");
+                        addConvertedValue(value, i, j);
                     }
                     else if (value == null && string.IsNullOrEmpty((string)formula))
                     {
-                        Logger.DebugLine($"{i}, {j}: Value equals Formula: Both empty");
+                        Logger.DebugLine($"{j}, {i}: Value equals Formula: Both empty");
                     }
                     else
                     {
@@ -184,7 +220,20 @@ namespace ANTLR_Test.Classes
                         Logger.Debug("----");
                         printObject(formula, "Formula");
                         Logger.DebugLine("");
-                        Logger.DebugLine($"{i}, {j}: Value does not equal Formula", 1);
+                        Logger.DebugLine($"{j}, {i}: Value does not equal Formula", 1);
+
+                        AntlrInputStream inputStream = new AntlrInputStream((string)formula);
+                        ExcelFormulaLexer spreadsheetLexer = new ExcelFormulaLexer(inputStream);
+                        CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
+                        ExcelFormulaParser excelFormulaParser = new ExcelFormulaParser(commonTokenStream);
+
+                        ExcelFormulaParser.ExcelExprContext context = excelFormulaParser.excelExpr();
+                        ExcelFormulaVisitor visitor = new ExcelFormulaVisitor();
+                        string formulaText = visitor.Visit(context);
+                        Logger.DebugLine($"FormulaText: {formulaText}", 1);
+
+                        convertedText += $"C[{j}|{i}] = ({formulaText})\n";
+
                     }
                 }
             }

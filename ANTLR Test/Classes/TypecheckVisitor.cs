@@ -65,7 +65,7 @@ namespace ANTLR_Test.Classes
         {
             Logger.DebugLine("Visit SpreadSheet");
             bool result = true;
-            foreach (var child in context.children)
+            foreach (var child in context._statements)
             {
                 result &= Visit(child);
                
@@ -419,7 +419,7 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    LastType = VarType.Unknown;
+                    LastType = VarType.Empty;
                 }
             }
             else
