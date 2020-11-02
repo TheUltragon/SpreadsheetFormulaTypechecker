@@ -8,6 +8,11 @@ namespace ANTLR_Test.Classes
 {
     public abstract class AbstractFormulaNode
     {
+        public AbstractFormula ParentFormula;
+        public AbstractFormulaNode(AbstractFormula formula)
+        {
+            ParentFormula = formula;
+        }
         public abstract AbstractFormulaNode Simplify();
     }
 
@@ -15,7 +20,7 @@ namespace ANTLR_Test.Classes
     {
         public string ErrorText;
 
-        public AbstractErrorNode(string text)
+        public AbstractErrorNode(AbstractFormula formula, string text) : base(formula)
         {
             ErrorText = text;
             Logger.Debug("Created ErrorNode: " + text);
@@ -36,7 +41,7 @@ namespace ANTLR_Test.Classes
     {
         public VarType Type;
 
-        public AbstractTypeNode(VarType type)
+        public AbstractTypeNode(AbstractFormula formula, VarType type) : base(formula)
         {
             Type = type;
         }
@@ -55,34 +60,54 @@ namespace ANTLR_Test.Classes
     public class AbstractCellNode : AbstractFormulaNode
     {
         public Tuple<int, int> CellIndex;
-        public bool IsRelative;
+        public bool IsLeftRelative;
+        public bool IsRightRelative;
 
-        public AbstractCellNode(Tuple<int, int> index, bool isRelative)
+        public AbstractCellNode(AbstractFormula formula, Tuple<int, int> index, bool leftRelative, bool rightRelative) : base(formula)
         {
             CellIndex = index;
-            IsRelative = isRelative;
+            IsLeftRelative = leftRelative;
+            IsRightRelative = rightRelative;
         }
 
         public override AbstractFormulaNode Simplify()
         {
-            return this;
+            var cellType = ParentFormula.Visitor.Repository.GetCurrentCellType(getThisCellIndex());
+            if(cellType != VarType.Empty && cellType != VarType.Unknown && cellType != VarType.None)
+            {
+                return new AbstractTypeNode(ParentFormula, cellType);
+            }
+            else
+            {
+                return this;
+            }
         }
 
         public override string ToString()
         {
-            return $"CellNode: Index: {CellIndex.ToString()}, isRelative: {IsRelative}";
+            return $"CellNode: Index: {CellIndex.ToString()}, LeftRelative: {IsLeftRelative}, RightRelative: {IsRightRelative}";
+        }
+
+        public Tuple<int, int> getThisCellIndex()
+        {
+            var addLeft = IsLeftRelative ? ParentFormula.CellIndex.Item1 : 0;
+            var addRight = IsRightRelative ? ParentFormula.CellIndex.Item2 : 0;
+            Tuple<int, int> index = new Tuple<int, int>(CellIndex.Item1 + addLeft, CellIndex.Item2 + addRight);
+            return index;
+           
         }
     }
 
     public abstract class AbstractFunctionNode : AbstractFormulaNode
     {
+        public AbstractFunctionNode(AbstractFormula formula) : base(formula) { }
     }
 
     public class AbstractProductNode : AbstractFunctionNode
     {
         public List<AbstractFormulaNode> Children;
 
-        public AbstractProductNode(List<AbstractFormulaNode> children)
+        public AbstractProductNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
         {
             Children = children;
         }
@@ -118,7 +143,7 @@ namespace ANTLR_Test.Classes
             //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
             if(simplifySuccess)
             {
-                return new AbstractTypeNode(highestType);
+                return new AbstractTypeNode(ParentFormula, highestType);
             }
             else
             {
@@ -143,7 +168,7 @@ namespace ANTLR_Test.Classes
     {
         public List<AbstractFormulaNode> Children;
 
-        public AbstractSumNode(List<AbstractFormulaNode> children)
+        public AbstractSumNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
         {
             Children = children;
         }
@@ -180,7 +205,7 @@ namespace ANTLR_Test.Classes
             //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
             if (simplifySuccess)
             {
-                return new AbstractTypeNode(highestType);
+                return new AbstractTypeNode(ParentFormula, highestType);
             }
             else
             {
@@ -206,13 +231,14 @@ namespace ANTLR_Test.Classes
 
     public abstract class AbstractOperatorNode : AbstractFormulaNode
     {
+        public AbstractOperatorNode(AbstractFormula formula) : base(formula) { }
     }
 
     public class AbstractAddNode : AbstractOperatorNode
     {
         public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
 
-        public AbstractAddNode(AbstractFormulaNode child1, AbstractFormulaNode child2)
+        public AbstractAddNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
         {
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1,child2);
         }
@@ -228,16 +254,16 @@ namespace ANTLR_Test.Classes
                 VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if(tp1 == tp2)
                 {
-                    return new AbstractTypeNode(tp1);
+                    return new AbstractTypeNode(ParentFormula, tp1);
                 }
                 else if (tp1.IsNumeric() && tp2.IsNumeric())
                 {
-                    return new AbstractTypeNode(VarTypeExtensions.GetHighestNumericType(tp1, tp2));
+                    return new AbstractTypeNode(ParentFormula, VarTypeExtensions.GetHighestNumericType(tp1, tp2));
                 }
                 else if (tp1.IsText() && tp2.IsText())
                 {
                     //Char and Char or Char and string always returns a string
-                    return new AbstractTypeNode(VarType.String);
+                    return new AbstractTypeNode(ParentFormula, VarType.String);
                 }
             }
 
@@ -255,7 +281,7 @@ namespace ANTLR_Test.Classes
     {
         public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
 
-        public AbstractSubNode(AbstractFormulaNode child1, AbstractFormulaNode child2)
+        public AbstractSubNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
         {
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
         }
@@ -271,11 +297,11 @@ namespace ANTLR_Test.Classes
                 VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (tp1 == tp2)
                 {
-                    return new AbstractTypeNode(tp1);
+                    return new AbstractTypeNode(ParentFormula, tp1);
                 }
                 else if (tp1.IsNumeric() && tp2.IsNumeric())
                 {
-                    return new AbstractTypeNode(VarTypeExtensions.GetHighestNumericType(tp1, tp2));
+                    return new AbstractTypeNode(ParentFormula, VarTypeExtensions.GetHighestNumericType(tp1, tp2));
                 }
             }
 

@@ -31,7 +31,7 @@ namespace ANTLR_Test.Classes
         }
         public void AddFormula(Tuple<int, int> cell, SpreadsheetParser.ExpContext formula)
         {
-            var abstractFormula = TranslateFormula(formula, out bool success);
+            var abstractFormula = TranslateFormula(formula, cell, out bool success);
             if (success)
             {
                 Logger.DebugLine($"Registered abstractFormula {abstractFormula.ToString()}");
@@ -50,7 +50,7 @@ namespace ANTLR_Test.Classes
             }
         }
 
-        public AbstractFormula TranslateFormula(SpreadsheetParser.ExpContext formula, out bool success)
+        public AbstractFormula TranslateFormula(SpreadsheetParser.ExpContext formula, Tuple<int, int> cellIndex, out bool success)
         {
             if(formula == null)
             {
@@ -66,10 +66,19 @@ namespace ANTLR_Test.Classes
                 abstractFormula.Visitor = Visitor;
                 abstractFormula.CellFormulas = CellFormulas;
                 abstractFormula.Formulas = this;
+                abstractFormula.CellIndex = cellIndex;
 
-                abstractFormula.Translate();
-                //abstractFormula.Simplify();   //Simplify is own function, dont partially simplify throughout translation (might be performance boost though)
-                return abstractFormula;
+                bool result = abstractFormula.Translate();
+                if (result)
+                {
+                    //abstractFormula.Simplify();   //Simplify is own function, dont partially simplify throughout translation (might be performance boost though)
+                    return abstractFormula;
+                }
+                else
+                {
+                    success = false;
+                    return null;
+                }
             }
             else
             {

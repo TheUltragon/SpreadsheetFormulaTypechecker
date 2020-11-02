@@ -100,10 +100,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Data\Corpus\03PFMJOURnalBOOKSFina#A7ED3.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\02rise.xls">
+    <None Include="Data\Corpus\02rise.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Data\Corpus\BKUP\03PFMJOURnalBOOKSFina#A7ED3.xls">
@@ -115,7 +112,7 @@
     <None Include="Data\Corpus\BKUP\03Q3MAJORE2_2.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Corpus\12-31-03%25207%2520Year%2520F#A7AD8.xls">
+    <None Include="Data\Corpus\BKUP\12-31-03%25207%2520Year%2520F#A7AD8.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Data\Corpus\BKUP\4.f._FinReport.xls">
@@ -134,6 +131,12 @@
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
     <None Include="Testsuite\Bad\Intermediate Language\test-bad1.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Bad\Malformed Input\test-bad1.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\AAA\test-all.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Testsuite\Good\Abstract Formulas\test-assign.xl">
@@ -221,4 +224,8 @@
     <Error Condition="!Exists('..\packages\Antlr4.CodeGenerator.4.6.6\build\Antlr4.CodeGenerator.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Antlr4.CodeGenerator.4.6.6\build\Antlr4.CodeGenerator.targets'))" />
   </Target>
   <Import Project="..\packages\Antlr4.CodeGenerator.4.6.6\build\Antlr4.CodeGenerator.targets" Condition="Exists('..\packages\Antlr4.CodeGenerator.4.6.6\build\Antlr4.CodeGenerator.targets')" />
+  <PropertyGroup>
+    <PreBuildEvent>RD /S /Q "$(TargetDir)Data\
+RD /S /Q "$(TargetDir)Testsuite\</PreBuildEvent>
+  </PropertyGroup>
 </Project>

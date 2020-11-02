@@ -13,6 +13,7 @@ namespace ANTLR_Test.Classes
         public SpreadsheetParser.ExpContext Exp { get; set; }
         public Dictionary<Tuple<int, int>, AbstractFormula> CellFormulas { get; set; }
         public AbstractFormulas Formulas { get; set; }
+        public Tuple<int, int> CellIndex { get; set; }
         public AbstractFormulaNode Node { get; protected set; }
 
         public abstract Type ExpressionType { get; }
@@ -20,7 +21,7 @@ namespace ANTLR_Test.Classes
         public AbstractFormula() { }
 
         //Takes Exp and Translates it into an AbstractFormulaNode. Saves the result in Node
-        public abstract void Translate();
+        public abstract bool Translate();
 
         //Takes Node and Simplifies it (e.g.: Int + Int = Int). Best Case would be to just get a variable type
         public void Simplify()
@@ -45,32 +46,33 @@ namespace ANTLR_Test.Classes
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.ValueExpContext);
 
-        public override void Translate()
+        public override bool Translate()
         {
             Visitor.Visit(Exp);
             var type = Visitor.LastType;
-            Node = new AbstractTypeNode(type);
+            Node = new AbstractTypeNode(this, type);
+            return true;
         }
 
         
+    }
+
+    enum Relativity
+    {
+        Pos, 
+        Neg, 
+        None
     }
 
     public class AbstractCellFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.CellExpContext);
 
-        public override void Translate()
+        public override bool Translate()
         {
             var cellExp = (SpreadsheetParser.CellExpContext)Exp;
-            bool isRelative;
-            if (cellExp.left is SpreadsheetParser.BaseAExpContext && cellExp.right is SpreadsheetParser.BaseAExpContext)
-            {
-                isRelative = false;
-            }
-            else
-            {
-                isRelative = true;
-            }
+            Relativity leftRelative = getRelativity(cellExp.left);
+            Relativity rightRelative = getRelativity(cellExp.right);
 
             var left = getValueExp(cellExp.left);
             var right = getValueExp(cellExp.right);
@@ -81,21 +83,32 @@ namespace ANTLR_Test.Classes
                 if (leftParam.val is SpreadsheetParser.IntValContext && rightParam.val is SpreadsheetParser.IntValContext)
                 {
                     var leftVal = int.Parse(leftParam.val.GetText());
+                    if(leftRelative == Relativity.Neg)
+                    {
+                        leftVal *= -1;
+                    }
                     var rightVal = int.Parse(rightParam.val.GetText());
+                    if (rightRelative == Relativity.Neg)
+                    {
+                        rightVal *= -1;
+                    }
 
-                    Node = new AbstractCellNode(new Tuple<int, int>(leftVal, rightVal), isRelative);
+                    Node = new AbstractCellNode(this, new Tuple<int, int>(leftVal, rightVal), isRelative(leftRelative), isRelative(rightRelative));
                 }
                 else
                 {
                     var text = "Typecheck Error - Cell Expression has indices of type other than int.";
-                    Node = new AbstractErrorNode(text);
+                    Node = new AbstractErrorNode(this, text);
+                    return false;
                 }
             }
             else
             {
                 var text = "Cell Expression has indices of type other than simple values - this is not supported yet.";
-                Node = new AbstractErrorNode(text);
+                Node = new AbstractErrorNode(this, text);
+                return false;
             }
+            return true;
         }
 
         private SpreadsheetParser.ExpContext getValueExp(SpreadsheetParser.AexpContext context)
@@ -118,21 +131,49 @@ namespace ANTLR_Test.Classes
                 return null;
             }
         }
+
+        private Relativity getRelativity(SpreadsheetParser.AexpContext context)
+        {
+            if (context is SpreadsheetParser.BaseAExpContext)
+            {
+                return Relativity.None;
+            }
+            else if (context is SpreadsheetParser.NegAExpContext)
+            {
+                return Relativity.Neg;
+            }
+            else if (context is SpreadsheetParser.PosAExpContext)
+            {
+                return Relativity.Pos;
+            }
+            else
+            {
+                Logger.DebugLine("Error: Reached end of getRelativity if else");
+                return Relativity.None;
+            }
+        }
+
+        private bool isRelative(Relativity relative)
+        {
+            return relative != Relativity.None;
+        }
     }
 
     public class AbstractAddFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.AddExpContext);
 
-        public override void Translate()
+        public override bool Translate()
         {
             var addExp = (SpreadsheetParser.AddExpContext)Exp;
-            var leftFormula = Formulas.TranslateFormula(addExp.left, out bool successLeft);
-            var rightFormula = Formulas.TranslateFormula(addExp.right, out bool successRight);
+            var leftFormula = Formulas.TranslateFormula(addExp.left, CellIndex, out bool successLeft);
+            var rightFormula = Formulas.TranslateFormula(addExp.right, CellIndex, out bool successRight);
             if(successLeft && successRight)
             {
-                Node = new AbstractAddNode(leftFormula.Node, rightFormula.Node);
+                Node = new AbstractAddNode(this, leftFormula.Node, rightFormula.Node);
+                return true;
             }
+            return false;
         }
     }
 
@@ -140,15 +181,17 @@ namespace ANTLR_Test.Classes
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.SubExpContext);
 
-        public override void Translate()
+        public override bool Translate()
         {
             var addExp = (SpreadsheetParser.SubExpContext)Exp;
-            var leftFormula = Formulas.TranslateFormula(addExp.left, out bool successLeft);
-            var rightFormula = Formulas.TranslateFormula(addExp.right, out bool successRight);
+            var leftFormula = Formulas.TranslateFormula(addExp.left, CellIndex, out bool successLeft);
+            var rightFormula = Formulas.TranslateFormula(addExp.right, CellIndex, out bool successRight);
             if (successLeft && successRight)
             {
-                Node = new AbstractSubNode(leftFormula.Node, rightFormula.Node);
+                Node = new AbstractSubNode(this, leftFormula.Node, rightFormula.Node);
+                return true;
             }
+            return false;
         }
     }
 
@@ -196,7 +239,7 @@ namespace ANTLR_Test.Classes
         public SpreadsheetParser.FexpContext Fexp => ((SpreadsheetParser.FunctionExpContext)Exp).fun;
         
 
-        public override void Translate()
+        public override bool Translate()
         {
             bool success = AbstractFunctionFormulaContent.Formulas.TryGetValue(Fexp.GetType(), out Type formulaType);
             if (success)
@@ -210,11 +253,12 @@ namespace ANTLR_Test.Classes
                 AbstractExp.TranslateFunction();
 
                 Node = AbstractExp.Node;
+                return true;
             }
             else
             {
                 Logger.DebugLine($"Error - Couldnt Translate Function Formula, formula Type {Fexp.GetType()} not registered yet.");
-                return;
+                return false;
             }
         }
 
@@ -238,7 +282,7 @@ namespace ANTLR_Test.Classes
                 Logger.Debug("Translation, ");
                 if(context != null)
                 {
-                    var formula = Formulas.TranslateFormula(context, out bool successFormula);
+                    var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
                     formulaNodes.Add(formula.Node);
                     success &= successFormula;
                 }
@@ -246,7 +290,7 @@ namespace ANTLR_Test.Classes
             
             if (success)
             {
-                Node = new AbstractProductNode(formulaNodes);
+                Node = new AbstractProductNode(this, formulaNodes);
             }
         }
     }
@@ -267,7 +311,7 @@ namespace ANTLR_Test.Classes
                 Logger.Debug("Translation, ");
                 if (context != null)
                 {
-                    var formula = Formulas.TranslateFormula(context, out bool successFormula);
+                    var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
                     formulaNodes.Add(formula.Node);
                     success &= successFormula;
                 }
@@ -275,7 +319,7 @@ namespace ANTLR_Test.Classes
 
             if (success)
             {
-                Node = new AbstractProductNode(formulaNodes);
+                Node = new AbstractProductNode(this, formulaNodes);
             }
         }
     }

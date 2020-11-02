@@ -53,11 +53,11 @@ oneArg
 	;
 
 twoArg
-	: '(' exp ',' exp ')'
+	: '(' first=exp ',' second=exp ')'
 	;
 
 threeArg
-	: '(' exp ',' exp ',' exp ')'
+	: '(' first=exp ',' second=exp ',' third=exp ')'
 	;
 
 anyArg

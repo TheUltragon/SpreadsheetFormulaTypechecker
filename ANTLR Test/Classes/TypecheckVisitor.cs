@@ -1030,8 +1030,9 @@ namespace ANTLR_Test.Classes
         {
             Logger.DebugLine("Visit Isblank Exp");
             SpreadsheetParser.OneArgContext args = context.oneArg();
+            var result = Visit(context.oneArg().exp());
             LastType = VarType.Bool;
-            return Visit(context.oneArg().exp());
+            return result;
         }
 
         public override bool VisitIfFunc([NotNull] SpreadsheetParser.IfFuncContext context)
@@ -1040,15 +1041,15 @@ namespace ANTLR_Test.Classes
             bool result = true;
 
             var args = context.threeArg();
-            var firstArg = args.GetChild(0);
+            var firstArg = args.first;
             Visit(firstArg);
             VarType firstType = LastType;
 
-            var secondArg = args.GetChild(1);
+            var secondArg = args.second;
             Visit(secondArg);
             VarType secondType = LastType;
 
-            var thirdArg = args.GetChild(2);
+            var thirdArg = args.third;
             Visit(thirdArg);
             VarType thirdType = LastType;
 

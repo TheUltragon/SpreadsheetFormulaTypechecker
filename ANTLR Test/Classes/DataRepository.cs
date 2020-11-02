@@ -155,6 +155,24 @@ namespace ANTLR_Test.Classes
         {
             return CellTypes.GetValue<Tuple<int, int>, CellType>(cell);
         }
+
+        public VarType GetCellTypeAssign(Tuple<int, int> cell)
+        {
+            return CellTypeAssigns.GetValue<Tuple<int, int>, VarType>(cell, VarType.Empty);
+        }
+
+        public VarType GetCurrentCellType(Tuple<int, int> cell)
+        {
+            var tp = GetCellType(cell);
+            if(tp != null)
+            {
+                return tp.Type;
+            }
+            else
+            {
+                return GetCellTypeAssign(cell);
+            }
+        }
     }
 
     

@@ -20,14 +20,12 @@ namespace ANTLR_Test.Classes
 
             foreach (var file in files)
             {
+                Logger.DebugLine("===================================", 10);
                 Console.WriteLine($"Enter to continue with file {file}");
                 Console.ReadLine();
                 Logger.DebugLine($"Importing File {file}", 1);
                 ImportFile(file);
                 Logger.DebugLine($"Finished Importing File {file}", 1);
-                Logger.DebugLine("===================================", 10);
-                Logger.DebugLine("Enter to continue", 10);
-                Console.ReadLine();
                 Logger.DebugLine("===================================", 10);
                 Logger.SaveToFile();
 

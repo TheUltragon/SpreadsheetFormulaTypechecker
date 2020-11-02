@@ -10,19 +10,44 @@ using ANTLR_Test.Classes;
 
 namespace ANTLR_Test
 {
+    public enum Testrun
+    {
+        Positive,
+        Error,
+        Import,
+        All
+    }
     class Program
     {
         static void Main(string[] args)
         {
+            Testrun testing = Testrun.Positive;
             Logger.SetActive(true);
-            //Logger.SetOutputFile("Log.txt");
+            Logger.SetOutputFile("Data\\Log.txt");
             Logger.SetMinDebugLevelToConsole(1);
 
-            Logger.DebugLine("Program has started.", 10);
+            Logger.DebugLine($"Program has started. Testrun: {testing.ToString()}", 10);
 
             //Main Part for the Program
-            Import();
-            TestSuite();
+            if (testing == Testrun.All)
+            {
+                Import();
+                TestSuite(testing);
+            }
+            else if (testing == Testrun.Import)
+            {
+                Import();
+                TestSuite(testing);
+            }
+            else if(testing == Testrun.Error)
+            {
+                TestSuite(testing);
+            }
+            else if (testing == Testrun.Positive)
+            {
+                TestSuite(testing);
+            }
+
 
             Logger.SaveToFile();
             Logger.DebugLine("Program has ended. Press Enter to close it", 10);
@@ -52,12 +77,27 @@ namespace ANTLR_Test
             return files;
         }
 
-        static void TestSuite()
+        static void TestSuite(Testrun testing)
         {
             List<string> files = new List<string>();
-            files.AddRange(ListFilesRecursively("Data\\Imports"));
-            files.AddRange(ListFilesRecursively("Testsuite\\Good"));
-            files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
+            if(testing == Testrun.Positive)
+            {
+                files.AddRange(ListFilesRecursively("Testsuite\\Good"));
+            }
+            else if(testing == Testrun.Error)
+            {
+                files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
+            }
+            if (testing == Testrun.Import)
+            {
+                files.AddRange(ListFilesRecursively("Data\\Imports"));
+            }
+            else if (testing == Testrun.All)
+            {
+                files.AddRange(ListFilesRecursively("Testsuite\\Good"));
+                files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
+                files.AddRange(ListFilesRecursively("Data\\Imports"));
+            }
             Logger.DebugLine($"Going to parse {files.Count} files");
             Logger.DebugLine("");
 
@@ -74,7 +114,9 @@ namespace ANTLR_Test
                 }
 
                 Logger.DebugLine("====================================================", 10);
-                Logger.DebugLine($"Parsing file {file}", 10);
+                Logger.DebugLine($"Going to parse file {file}", 10);
+                Logger.DebugLine("Enter to continue", 10);
+                Console.ReadLine();
                 Logger.DebugLine("====================================================", 10);
                 StreamReader reader = File.OpenText(file);
                 ErrorHandler handler = new ErrorHandler();
@@ -83,11 +125,25 @@ namespace ANTLR_Test
                 CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
                 SpreadsheetParser spreadsheetParser = new SpreadsheetParser(commonTokenStream);
 
-                SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
-                SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 Logger.DebugLine(reader.ReadToEnd(), 1);
                 Logger.DebugLine("====================================================", 10);
+                reader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+
+                SpreadsheetParser.SpreadSheetContext context = spreadsheetParser.spreadSheet();
+                if(spreadsheetParser.NumberOfSyntaxErrors > 0)
+                {
+                    Logger.DebugLine("===================================", 10);
+                    Logger.DebugLine("Found Syntax Error - Dont processing file", 10);
+                    Logger.DebugLine("Enter to continue", 10);
+                    Console.ReadLine();
+                    Logger.DebugLine("===================================", 10);
+                    continue;
+                }
+
+                SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
+                
                 Logger.DebugLine("", 10);
                 PrintContext(context, 0, 0);
                 Logger.DebugLine("", 0);
@@ -109,10 +165,7 @@ namespace ANTLR_Test
                         Logger.DebugLine($"{formula.Key.Item1}, {formula.Key.Item2}: {formula.Value.ToString()}", 5);
                     }
                 }
-                Logger.DebugLine("===================================", 10);
-                Logger.DebugLine("Enter to continue", 10);
-                Console.ReadLine();
-                Logger.DebugLine("===================================", 10);
+                
             }
         }
 
