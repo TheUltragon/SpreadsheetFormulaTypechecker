@@ -15,28 +15,35 @@ namespace ANTLR_Test
         Positive,
         Error,
         Import,
+        ImportTest,
         All
     }
     class Program
     {
         static void Main(string[] args)
         {
-            Testrun testing = Testrun.Positive;
+            Testrun testing = Testrun.ImportTest;
             Logger.SetActive(true);
-            Logger.SetOutputFile("Data\\Log.txt");
-            Logger.SetMinDebugLevelToConsole(1);
+            //Logger.SetOutputFile("Data\\Log.txt");
+            Logger.SetMinDebugLevelToConsole(5);
 
             Logger.DebugLine($"Program has started. Testrun: {testing.ToString()}", 10);
 
             //Main Part for the Program
             if (testing == Testrun.All)
             {
-                Import();
+                Import(testing);
                 TestSuite(testing);
             }
             else if (testing == Testrun.Import)
             {
-                Import();
+                Import(testing);
+                TestSuite(testing);
+            }
+            else if (testing == Testrun.ImportTest)
+            {
+                ImportTest();
+                Import(testing);
                 TestSuite(testing);
             }
             else if(testing == Testrun.Error)
@@ -115,8 +122,12 @@ namespace ANTLR_Test
 
                 Logger.DebugLine("====================================================", 10);
                 Logger.DebugLine($"Going to parse file {file}", 10);
-                Logger.DebugLine("Enter to continue", 10);
-                Console.ReadLine();
+                if (GlobalSettings.TypecheckerStopAtNextFile)
+                {
+                    Logger.DebugLine("Enter to continue", 10);
+                    Console.ReadLine();
+                }
+                
                 Logger.DebugLine("====================================================", 10);
                 StreamReader reader = File.OpenText(file);
                 ErrorHandler handler = new ErrorHandler();
@@ -126,7 +137,7 @@ namespace ANTLR_Test
                 SpreadsheetParser spreadsheetParser = new SpreadsheetParser(commonTokenStream);
 
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
-                Logger.DebugLine(reader.ReadToEnd(), 1);
+                Logger.DebugLine(reader.ReadToEnd(), 5);
                 Logger.DebugLine("====================================================", 10);
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
 
@@ -136,8 +147,11 @@ namespace ANTLR_Test
                 {
                     Logger.DebugLine("===================================", 10);
                     Logger.DebugLine("Found Syntax Error - Dont processing file", 10);
-                    Logger.DebugLine("Enter to continue", 10);
-                    Console.ReadLine();
+                    if (GlobalSettings.TypecheckerStopSyntaxError)
+                    {
+                        Logger.DebugLine("Enter to continue", 10);
+                        Console.ReadLine();
+                    }
                     Logger.DebugLine("===================================", 10);
                     continue;
                 }
@@ -185,15 +199,45 @@ namespace ANTLR_Test
             }
         }
 
-        static void Import()
+        static void Import(Testrun testing)
         {
             ExcelReaderImporter excelReaderImporter = new ExcelReaderImporter();
             LinqToExcelImporter linqToExcelImporter = new LinqToExcelImporter();
             ExcelInteropImporter excelInteropImporter = new ExcelInteropImporter();
 
+            string output = "Data\\Imports";
+            List<string> files = new List<string>();
+            if(testing == Testrun.Import)
+            {
+                files.AddRange(ListFilesRecursively("C:\\Users\\Win10\\OneDrive\\Dropbox\\StudFiles\\Bachelorarbeit\\Static Analysis of Spreadsheets\\Literatur\\Sekundäre Literatur\\EUSES\\spreadsheets"));
+            }
+            else if(testing == Testrun.ImportTest)
+            {
+                files.AddRange(Directory.EnumerateFiles("Data\\Corpus"));
+            }
+
             //excelReaderImporter.ImportFiles();
             //linqToExcelImporter.ImportFiles();
-            excelInteropImporter.ImportFiles();
+            excelInteropImporter.ImportFiles(files, output);
+        }
+        static void ImportTest()
+        {
+            string formula = "=MAX(B6-40;0)";
+            AntlrInputStream inputStream = new AntlrInputStream((string)formula);
+            ExcelFormulaLexer spreadsheetLexer = new ExcelFormulaLexer(inputStream);
+            CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
+            ExcelFormulaParser excelFormulaParser = new ExcelFormulaParser(commonTokenStream);
+
+            ExcelFormulaParser.ExcelExprContext context = excelFormulaParser.excelExpr();
+            if (excelFormulaParser.NumberOfSyntaxErrors > 0)
+            {
+                Logger.DebugLine($"Found Syntax Error - Dont processing formula {(string)formula}", 10);
+                return;
+            }
+            ExcelFormulaVisitor visitor = new ExcelFormulaVisitor();
+            string formulaText = visitor.Visit(context);
+
+            Logger.DebugLine($"FormulaText: {formulaText}", 10);
         }
     }
 }

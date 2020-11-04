@@ -42,6 +42,11 @@ namespace ANTLR_Test.Classes
             }
         }
 
+        public void RemoveFormula(Tuple<int, int> cell)
+        {
+            CellFormulas.Remove(cell);
+        }
+
         public void Simplify()
         {
             foreach(var formula in CellFormulas.Values)

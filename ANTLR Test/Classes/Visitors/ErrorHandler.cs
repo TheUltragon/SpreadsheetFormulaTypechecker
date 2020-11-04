@@ -12,15 +12,12 @@ namespace ANTLR_Test.Classes
     {
         public List<Tuple<ErrorType, string>> IgnoredErrors;
         public List<Tuple<ErrorType, string>> UnIgnoredErrors;
-        public bool LogIgnoredErrors;
-        public bool CheckIgnoreForUnspecifiedErrors;
 
         public ErrorHandlerData()
         {
             IgnoredErrors = new List<Tuple<ErrorType, string>>();
             UnIgnoredErrors = new List<Tuple<ErrorType, string>>();
-            LogIgnoredErrors = false;
-            CheckIgnoreForUnspecifiedErrors = true;
+            
         }
     }
 
@@ -31,6 +28,7 @@ namespace ANTLR_Test.Classes
         CellAdressRelativeNotFound,
         CellWrongType,
         ExpectedOtherType,
+        UnexpectedEmptyType,
         IncompatibleTypesExpression,
         IncompatibleTypesAssignment,
         IncompatibleCurrencies,
@@ -79,7 +77,7 @@ namespace ANTLR_Test.Classes
             //Check, wether this error should be ignored
             if (ignoreable && !CheckIfErrorToBeThrown(type, specifier)){
                 //Check if ignored errors should be reported
-                if(data.LogIgnoredErrors)
+                if(GlobalSettings.LogIgnoredErrors)
                 {
                     Logger.DebugLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}", 10);
                 }
@@ -88,7 +86,7 @@ namespace ANTLR_Test.Classes
 
             Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 10);
             //Check, wether unspecified errors should be ignore checked
-            if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && data.CheckIgnoreForUnspecifiedErrors)
+            if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && GlobalSettings.CheckIgnoreForUnspecifiedErrors)
             {
                 bool result = checkIgnoreForUnspecifiedError(type, specifier);
                 if (result)
@@ -107,10 +105,21 @@ namespace ANTLR_Test.Classes
                 $"\n    'y' to ignore this type and specifier combination, " +
                 $"\n    'Y' to ignore the whole type, " +
                 $"\n    'n' to keep reporting this type-specifier combination and " +
-                $"\n    'N' to keep reporting this error type, regardless of combination.", 10);
+                $"\n    'N' to keep reporting this error type, regardless of combination." +
+                $"\n    '?' to keep reporting this error type as an error, but ask again wether it should be ignored.", 10);
             while (true)
             {
-                var input = Console.ReadLine();
+                string input = "?";
+                if (GlobalSettings.ErrorHandlerAskAtError)
+                {
+                    input = Console.ReadLine();
+                }
+                else
+                {
+                    input = GlobalSettings.ConvertErrorAnswerToInput(GlobalSettings.ErrorHandlerDefaultAnswer);
+                }
+
+
                 if (input.Equals("Y"))
                 {
                     data.IgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
@@ -131,9 +140,13 @@ namespace ANTLR_Test.Classes
                     data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
                     return false;
                 }
+                else if (input.Equals("?"))
+                {
+                    return false;
+                }
                 else
                 {
-                    Logger.DebugLine($"Unknown input, please input either 'Y', 'y', 'N' or 'n'.", 10);
+                    Logger.DebugLine($"Unknown input, please input either 'Y', 'y', 'N', 'n' or '?'.", 10);
                 }
             }
         }

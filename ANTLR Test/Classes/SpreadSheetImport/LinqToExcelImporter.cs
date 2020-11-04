@@ -11,7 +11,7 @@ namespace ANTLR_Test.Classes
     //Uses following library: https://github.com/paulyoder/LinqToExcel
     public class LinqToExcelImporter : SpreadSheetImporter
     {
-        public override void ImportFile(string path)
+        public override void ImportFile(string path, string output)
         {
             Logger.DebugLine($"Importing File {path}");
             var excel = new ExcelQueryFactory(path);

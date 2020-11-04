@@ -12,7 +12,7 @@ stm
 	: ';'															#emptyStm
 	| 'C[' left=exp '|' right=exp ']' 'is' tp=type					#cellTypeStm
 	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellValueStm
-	| 'C[' left=exp '|' right=exp ']' '=' '(' content=exp ')'		#cellFormulaStm
+	| 'C[' left=exp '|' right=exp ']' '=' '{' content=exp '}'		#cellFormulaStm
 	| tp=type IDENT '=' val=exp										#assignStm
 	| 'eval'														#evalStm
 	| 'if' check=exp 'then' trueStm=stm 'else' falseStm=stm			#ifStm
@@ -46,6 +46,9 @@ fexp
 	| 'ISBLANK' oneArg												#isblankFunc
 	| 'SUM' anyArg													#sumFunc
 	| 'PROD' anyArg													#prodFunc
+	| 'AVERAGE' anyArg												#averageFunc
+	| 'MAX' anyArg													#maxFunc
+	| 'MIN' anyArg													#minFunc
 	;
 
 oneArg

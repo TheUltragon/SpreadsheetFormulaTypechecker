@@ -110,7 +110,7 @@ namespace ANTLR_Test.Classes
                     false,
                     ErrorType.CellAdressWrongType,
                     $"Cell Type Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}",
-                    $"Cell Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                    $"Cell Statement has Adress expressions not of type int! Found expressions: {context.left.GetText()} : {leftVal.GetVarType().ToString()} and {context.right.GetText()} :{rightVal.GetVarType().ToString()}"
                 );
             }
 
@@ -136,6 +136,7 @@ namespace ANTLR_Test.Classes
                 int right = ((IntValue)rightVal).Value;
                 var address = new Tuple<int, int>(left, right);
                 CurrentAddress = address;
+                result &= Visit(context.content);
 
                 if (Repository.CellTypeAssigns.TryGetValue(address, out VarType type) && type != LastType)
                 {
@@ -145,12 +146,11 @@ namespace ANTLR_Test.Classes
                         true,
                         ErrorType.CellWrongType,
                         $"Cell Value Stm has different type {type.ToString()} assigned than {LastType.ToString()}",
-                        $"Cell Value Statement has Type {type.ToString()} assigned, but now gets assigned an expression of type {LastType.ToString()}"
+                        $"Cell has Type {type.ToString()} assigned, but now gets assigned an expression {context.content.GetText()} of type {LastType.ToString()}"
                     );
                 }
                 if (result)
                 {
-                    result &= Visit(context.content);
                     var contentVal = new CellValue(this, LastExpValue);
                     contentVal.SetParentCell(address);
                     var contentType = new CellType(this, LastType);
@@ -159,6 +159,7 @@ namespace ANTLR_Test.Classes
                     Logger.DebugLine($"Add Cell Value {left}, {right}, {contentVal.ToString()}");
                     Repository.Cells[address] = contentVal;
                     Repository.CellTypes[address] = contentType;
+                    Repository.Formulas.RemoveFormula(address);
                 }
             }
             else
@@ -169,7 +170,7 @@ namespace ANTLR_Test.Classes
                     false, 
                     ErrorType.CellAdressWrongType, 
                     $"Cell Eq Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
-                    $"Cell Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                    $"Cell Statement has Adress expressions not of type int! Found expressions: {context.left.GetText()} : {leftVal.GetVarType().ToString()} and {context.right.GetText()} : {rightVal.GetVarType().ToString()}"
                 );
             }
 
@@ -215,7 +216,7 @@ namespace ANTLR_Test.Classes
                     false, 
                     ErrorType.CellAdressWrongType, 
                     $"Cell Stm Adress not integer types {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}", 
-                    $"Cell Equal Statement has Adress expressions not of type int! Found expressions: {leftVal.GetVarType().ToString()} and {rightVal.GetVarType().ToString()}"
+                    $"Cell Equal Statement has Adress expressions not of type int! Found expressions: {context.left.GetText()} : {leftVal.GetVarType().ToString()} and {context.right.GetText()} : {rightVal.GetVarType().ToString()}"
                 );
             }
             return result;
@@ -255,16 +256,30 @@ namespace ANTLR_Test.Classes
             result &= Visit(context.exp());
             VarType expType = LastType;
 
-            //Check, wether assignment declared type matches expression type and are not None
+            //Check, wether assignment declared type matches expression type and are not None or other unallowed type
             bool resultCheckTypes = varType == expType;
-            bool resultCheckTypeNotNone = varType != VarType.None;
+            bool resultCheckTypeNotNone = varType != VarType.None && varType != VarType.Unknown && varType != VarType.Empty;
             if (!resultCheckTypes)
             {
-                resultCheckTypes = Handler.ThrowError(context.Start.Line, context.Start.Column, true, ErrorType.IncompatibleTypesAssignment, $"Assignment incompatible types {varType.ToString()} and {expType.ToString()}", $"The variable of this assignment expects type {varType.ToString()} but was assigned an expression of type {expType.ToString()}.");
+                resultCheckTypes = Handler.ThrowError(
+                    context.Start.Line, 
+                    context.Start.Column, 
+                    true, 
+                    ErrorType.IncompatibleTypesAssignment, 
+                    $"Assignment incompatible types {varType.ToString()} and {expType.ToString()}", 
+                    $"The variable of this assignment expects type {varType.ToString()} but was assigned an expression {context.exp().GetText()} of type {expType.ToString()}."
+                    );
             }
             if (!resultCheckTypeNotNone)
             {
-                resultCheckTypeNotNone = Handler.ThrowError(context.Start.Line, context.Start.Column, false, ErrorType.ExpectedOtherType, $"Assignment not type None", $"The assignment has assigned {id} an expression with type None.");
+                resultCheckTypeNotNone = Handler.ThrowError(
+                    context.Start.Line, 
+                    context.Start.Column, 
+                    false, 
+                    ErrorType.ExpectedOtherType, 
+                    $"Assignment not type None", 
+                    $"The assignment has assigned {id} an expression {context.exp().GetText()} with unallowed type {varType.ToString()}."
+                    );
             }
             result &= resultCheckTypes && resultCheckTypeNotNone;
             if (result)
@@ -287,7 +302,13 @@ namespace ANTLR_Test.Classes
             bool resultCheckType = LastExpValue.GetVarType() == VarType.Bool;
             if (!resultCheckType)
             {
-                resultCheckType = Handler.ThrowError(context.check.Start.Line, context.check.Start.Column, false, ErrorType.ExpectedOtherType, "If Stm check type " + LastExpValue.GetVarType().ToString(), $"The check expression type of this if clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
+                resultCheckType = Handler.ThrowError(
+                    context.check.Start.Line, 
+                    context.check.Start.Column, 
+                    false, 
+                    ErrorType.ExpectedOtherType, 
+                    $"If Stm check type {LastExpValue.GetVarType().ToString()}", 
+                    $"The check expression {context.check.GetText()} of this if clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
             }
             result &= resultCheckType;
 
@@ -308,7 +329,14 @@ namespace ANTLR_Test.Classes
             bool resultCheckType = LastExpValue.GetVarType() == VarType.Bool;
             if(!resultCheckType)
             {
-                resultCheckType = Handler.ThrowError(context.check.Start.Line, context.check.Start.Column, false, ErrorType.ExpectedOtherType, "While Stm check type " + LastExpValue.GetVarType().ToString(), $"The check expression type of this while clause is of type {LastExpValue.GetVarType().ToString()} instead of bool.");
+                resultCheckType = Handler.ThrowError(
+                    context.check.Start.Line, 
+                    context.check.Start.Column, 
+                    false, 
+                    ErrorType.ExpectedOtherType, 
+                    $"While Stm check type {LastExpValue.GetVarType().ToString()}", 
+                    $"The check expression {context.check.GetText()} of this while clause is of type {LastExpValue.GetVarType().ToString()} instead of bool."
+                    );
             }
             result &= resultCheckType;
 
@@ -355,7 +383,7 @@ namespace ANTLR_Test.Classes
                     true, 
                     ErrorType.IncompatibleTypesExpression, 
                     $"Add Exp incompatible types {leftType.ToString()} and {rightType.ToString()}", 
-                    $"This addition expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                    $"This addition expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}."
                 );
                 LastType = leftType;
             }
@@ -384,7 +412,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"And Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This and expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This and expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -430,7 +458,7 @@ namespace ANTLR_Test.Classes
                     false,
                     ErrorType.CellAdressWrongType,
                     $"Cell Exp Adress not integer types {leftType.ToString()} and {rightType.ToString()}",
-                    $"Cell Expression has Adress expressions not of type int! Found expressions: {leftType.ToString()} and {rightType.ToString()}"
+                    $"Cell Expression has Adress expressions not of type int! Found expressions: {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}"
                 );
             }
 
@@ -520,7 +548,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Div Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This Division expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                    $"This Division expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}."
                 );
                 LastType = leftType;
             }
@@ -549,7 +577,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Equal Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This equality expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This equality expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -578,7 +606,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Greater Eq Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This greater equal expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This greater equal expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -607,7 +635,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Greater Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This greater expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This greater expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -640,7 +668,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Greater Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This greater expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This greater expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -673,7 +701,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Mult Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This multiplication expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                    $"This multiplication expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}."
                 );
                 LastType = leftType;
             }
@@ -728,7 +756,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Or Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This or expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This or expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -757,7 +785,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Smaller Eq Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This smaller equal expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This smaller equal expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -786,7 +814,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Smaller Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This smaller expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This smaller expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -819,7 +847,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"Sub Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This subtraction expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}."
+                    $"This subtraction expression has 2 incompatible expressions attached with expressions {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}."
                 );
                 LastType = leftType;
             }
@@ -848,7 +876,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"UnEqual Exp incompatible types {leftType.ToString()} and {rightType.ToString()}",
-                    $"This inequality expression has 2 incompatible expressions attached with types {leftType.ToString()} and {rightType.ToString()}. It expected 2 bool types."
+                    $"This inequality expression has 2 incompatible expressions attached with types {context.left.GetText()} : {leftType.ToString()} and {context.right.GetText()} : {rightType.ToString()}. It expected 2 bool types."
                 );
                 LastType = leftType;
             }
@@ -908,7 +936,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.ExpectedOtherType,
                     $"AExp unexpected type {type.ToString()}",
-                    $"Expected a numeric expression in base additive expression, but got type {type.ToString()} instead."
+                    $"Expected a numeric expression in base additive expression, but got expression {context.param.GetText()} : {type.ToString()} instead."
                 );
             }
             return result;
@@ -934,7 +962,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.ExpectedOtherType,
                     $"AExp unexpected type {type.ToString()}",
-                    $"Expected a numeric expression in negative additive expression, but got type {type.ToString()} instead."
+                    $"Expected a numeric expression in negative additive expression, but got expression {context.param.GetText()} : {type.ToString()} instead."
                 );
             }
             return result;
@@ -960,7 +988,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.ExpectedOtherType,
                     $"AExp unexpected type {type.ToString()}",
-                    $"Expected a numeric expression in positive additive expression, but got type {type.ToString()} instead."
+                    $"Expected a numeric expression in positive additive expression, but got expression {context.param.GetText()} : {type.ToString()} instead."
                 );
             }
             return result;
@@ -1062,7 +1090,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.ExpectedOtherType,
                     $"IfFunc unexpected check type {firstType.ToString()}",
-                    $"Expected a bool expression as the check expression in this if function, but got type {firstType.ToString()} instead."
+                    $"Expected a bool expression as the check expression in this if function, but got expression {firstArg.GetText()} : {firstType.ToString()} instead."
                 );
             }
             bool equalResult = secondType == thirdType;
@@ -1074,7 +1102,7 @@ namespace ANTLR_Test.Classes
                     true,
                     ErrorType.IncompatibleTypesExpression,
                     $"IfFunc incompatible types {secondType.ToString()} and {thirdType.ToString()}",
-                    $"Expected that second and third expression of this if function are equal, but got types {secondType.ToString()} and {thirdType.ToString()} instead."
+                    $"Expected that second and third expression of this if function are equal, but got expressions {secondArg.GetText()} : {secondType.ToString()} and {thirdArg.GetText()} : {thirdType.ToString()} instead."
                 );
             }
 
@@ -1086,7 +1114,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitProdFunc([NotNull] SpreadsheetParser.ProdFuncContext context)
         {
-            Logger.DebugLine("Visit Prod Exp");
+            Logger.DebugLine("Visit Prod Func Exp");
             bool result = true;
             var args = context.anyArg();
             VarType type = VarType.Int;
@@ -1095,13 +1123,18 @@ namespace ANTLR_Test.Classes
                 Visit(child);
                 if(type != VarType.Empty && !LastType.IsNumeric())
                 {
+                    ErrorType error = ErrorType.ExpectedOtherType;
+                    if(LastType == VarType.Empty)
+                    {
+                        error = ErrorType.UnexpectedEmptyType;
+                    }
                     result = Handler.ThrowError(
                         context.Start.Line,
                         context.Start.Column,
                         true,
-                        ErrorType.ExpectedOtherType,
+                        error,
                         $"Prod Func wrong type {LastType.ToString()}",
-                        $"The Product function expected an argument of type numeric, but got of type {LastType.ToString()} instead");
+                        $"The Product function expected all arguments of type numeric, but got one expression {child.GetText()} of type {LastType.ToString()} instead");
                 }
                 else
                 {
@@ -1122,7 +1155,7 @@ namespace ANTLR_Test.Classes
 
         public override bool VisitSumFunc([NotNull] SpreadsheetParser.SumFuncContext context)
         {
-            Logger.DebugLine("Visit Sum Exp");
+            Logger.DebugLine("Visit Sum Func Exp");
             bool result = true;
             var args = context.anyArg();
             VarType type = VarType.Int;
@@ -1131,13 +1164,18 @@ namespace ANTLR_Test.Classes
                 Visit(child);
                 if (type != VarType.Empty && !LastType.IsNumeric())
                 {
+                    ErrorType error = ErrorType.ExpectedOtherType;
+                    if (LastType == VarType.Empty)
+                    {
+                        error = ErrorType.UnexpectedEmptyType;
+                    }
                     result = Handler.ThrowError(
                         context.Start.Line,
                         context.Start.Column,
                         true,
-                        ErrorType.ExpectedOtherType,
-                        $"Prod Func wrong type {LastType.ToString()}",
-                        $"The Product function expected an argument of type numeric, but got of type {LastType.ToString()} instead");
+                        error,
+                        $"Sum Func wrong type {LastType.ToString()}",
+                        $"The Sum function expected all arguments of type numeric, but got one expression {child.GetText()} of type {LastType.ToString()} instead");
                 }
                 else
                 {
@@ -1155,6 +1193,125 @@ namespace ANTLR_Test.Classes
             return result;
         }
 
+        public override bool VisitAverageFunc([NotNull] SpreadsheetParser.AverageFuncContext context)
+        {
+            Logger.DebugLine("Visit Average Func Exp");
+            bool result = true;
+            var args = context.anyArg();
+            VarType type = VarType.Int;
+            foreach (var child in args._expr)
+            {
+                Visit(child);
+                if (type != VarType.Empty && !LastType.IsNumeric())
+                {
+                    ErrorType error = ErrorType.ExpectedOtherType;
+                    if (LastType == VarType.Empty)
+                    {
+                        error = ErrorType.UnexpectedEmptyType;
+                    }
+                    result = Handler.ThrowError(
+                        context.Start.Line,
+                        context.Start.Column,
+                        true,
+                        error,
+                        $"Average Func wrong type {LastType.ToString()}",
+                        $"The Average function expected all arguments of type numeric, but got one expression {child.GetText()} of type {LastType.ToString()} instead");
+                }
+                else
+                {
+                    var oldType = type;
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, oldType);
+                    Logger.DebugLine($"Sum: LastType: {LastType}, oldType: {oldType}, type: {type}");
+                }
+            }
+
+            if (result)
+            {
+                LastType = type;
+            }
+
+            return result;
+        }
+
+        public override bool VisitMaxFunc([NotNull] SpreadsheetParser.MaxFuncContext context)
+        {
+            Logger.DebugLine("Visit Max Func Exp");
+            bool result = true;
+            var args = context.anyArg();
+            VarType type = VarType.Int;
+            foreach (var child in args._expr)
+            {
+                Visit(child);
+                if (type != VarType.Empty && !LastType.IsNumeric())
+                {
+                    ErrorType error = ErrorType.ExpectedOtherType;
+                    if (LastType == VarType.Empty)
+                    {
+                        error = ErrorType.UnexpectedEmptyType;
+                    }
+                    result = Handler.ThrowError(
+                        context.Start.Line,
+                        context.Start.Column,
+                        true,
+                        error,
+                        $"Max Func wrong type {LastType.ToString()}",
+                        $"The Max function expected all arguments of type numeric, but got one expression {child.GetText()} of type {LastType.ToString()} instead");
+                }
+                else
+                {
+                    var oldType = type;
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, oldType);
+                    Logger.DebugLine($"Sum: LastType: {LastType}, oldType: {oldType}, type: {type}");
+                }
+            }
+
+            if (result)
+            {
+                LastType = type;
+            }
+
+            return result;
+        }
+
+        public override bool VisitMinFunc([NotNull] SpreadsheetParser.MinFuncContext context)
+        {
+            Logger.DebugLine("Visit Min Func Exp");
+            bool result = true;
+            var args = context.anyArg();
+            VarType type = VarType.Int;
+            foreach (var child in args._expr)
+            {
+                Visit(child);
+                if (type != VarType.Empty && !LastType.IsNumeric())
+                {
+                    ErrorType error = ErrorType.ExpectedOtherType;
+                    if (LastType == VarType.Empty)
+                    {
+                        error = ErrorType.UnexpectedEmptyType;
+                    }
+                    result = Handler.ThrowError(
+                        context.Start.Line,
+                        context.Start.Column,
+                        true,
+                        error,
+                        $"Min Func wrong type {LastType.ToString()}",
+                        $"The Min function expected all arguments of type numeric, but got one expression {child.GetText()} of type {LastType.ToString()} instead");
+                }
+                else
+                {
+                    var oldType = type;
+                    type = VarTypeExtensions.GetHighestNumericType(LastType, oldType);
+                    Logger.DebugLine($"Sum: LastType: {LastType}, oldType: {oldType}, type: {type}");
+                }
+            }
+
+            if (result)
+            {
+                LastType = type;
+            }
+
+            return result;
+        }
 
         // ==========================================
         // Values

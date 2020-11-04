@@ -16,30 +16,45 @@ namespace ANTLR_Test.Classes
     {
         string convertedText = "";
         //Mostly copied from: https://www.dotnetperls.com/excel
-        public override void ImportFile(string path)
+        public override void ImportFile(string path, string output)
         {
             Application app = new Application();
             Workbook workBook = app.Workbooks.Open(Path.GetFullPath(path));
 
-            handleWorkBook(workBook, path);
+            handleWorkBook(workBook, path, output);
 
             workBook.Close(false, path, null);
             Marshal.ReleaseComObject(workBook);
         }
 
-        private void handleWorkBook(Workbook workBook, string path)
+        private void handleWorkBook(Workbook workBook, string path, string output)
         {
             int numSheets = workBook.Sheets.Count;
-            Logger.DebugLine($"Sheets: {numSheets}", 1);
+            Logger.DebugLine($"Sheets: {numSheets}", 5);
 
             //
             // Iterate through the sheets. They are indexed starting at 1.
             //
             for (int sheetNum = 1; sheetNum < numSheets + 1; sheetNum++)
             {
-                Logger.DebugLine($"Importing Sheet {sheetNum}", 1);
-                Worksheet sheet = (Worksheet)workBook.Sheets[sheetNum];
-
+                Logger.DebugLine($"Importing Sheet {sheetNum}", 5);
+                Worksheet sheet;
+                try
+                {
+                    sheet = (Worksheet)workBook.Sheets[sheetNum];
+                }
+                catch (InvalidCastException e)
+                {
+                    Logger.DebugLine($"Exception - Couldnt cast sheet to worksheet. Skipping worksheet.", 10);
+                    Logger.DebugLine($"Exception Text: {e.ToString()}", 1);
+                    Logger.DebugLine($"Exception Stacktrace: {e.StackTrace}", 1);
+                    if (GlobalSettings.ImportStopAtMiscError)
+                    {
+                        Console.WriteLine($"Enter to continue");
+                        Console.ReadLine();
+                    }
+                    continue;
+                }
                 //
                 // Take the used range of the sheet. Finally, get an object array of all
                 // of the cells in the sheet (their values). You can do things with those
@@ -48,7 +63,7 @@ namespace ANTLR_Test.Classes
                 Range excelRange = sheet.UsedRange;
                 object[,] valueArray = (object[,])excelRange.get_Value(
                     XlRangeValueDataType.xlRangeValueDefault);
-                object[,] formulaArray = new object[1,1];
+                object[,] formulaArray = new object[1, 1];
                 if (excelRange.Formula is string)
                 {
                     formulaArray[0, 0] = (string)excelRange.Formula;
@@ -61,7 +76,7 @@ namespace ANTLR_Test.Classes
                 //
                 // Do something with the data in the array with a custom method.
                 //
-                if(valueArray != null && formulaArray != null)
+                if (valueArray != null && formulaArray != null)
                 {
                     convertedText = "";
 
@@ -71,10 +86,11 @@ namespace ANTLR_Test.Classes
 
                     Logger.DebugLine($"=========================================", 10);
                     Logger.DebugLine($"Imported File Workbook {sheetNum}", 10);
-                    Logger.DebugLine($"{convertedText}", 10);
+                    Logger.DebugLine($"{convertedText}", 5);
                     Logger.DebugLine($"=========================================", 10);
 
-                    string newPath = path.Replace("Corpus", "Imports").Split('.').First() + $"_WB{sheetNum}.xl";
+                    string newFileName = Path.GetFileName(path).Split('.').First() + $"_WB{sheetNum}.xl";
+                    string newPath = Path.Combine(output, newFileName);
                     File.WriteAllText(newPath, convertedText);
                     Logger.DebugLine("Wrote Import to file " + newPath, 10);
                 }
@@ -82,10 +98,6 @@ namespace ANTLR_Test.Classes
                 {
                     Logger.Debug("ValueArray or FormulaArray was null!");
                 }
-
-
-
-
             }
         }
 
@@ -98,11 +110,11 @@ namespace ANTLR_Test.Classes
 
             Logger.DebugLine($"xV: {xV}, xF: {xF}, yV: {yV}, yF: {yF}");
 
-            Logger.DebugLine($"Processing Values", 1);
+            Logger.DebugLine($"Processing Values", 5);
             printArray(valueArray, "Value");
-            Logger.DebugLine($"Processing Formulas", 1);
+            Logger.DebugLine($"Processing Formulas", 5);
             printArray(formulaArray, "Formula");
-            Logger.DebugLine($"Comparing Values and Formulas", 1);
+            Logger.DebugLine($"Comparing Values and Formulas", 5);
             compareArrays(valueArray, formulaArray);
         }
 
@@ -158,6 +170,10 @@ namespace ANTLR_Test.Classes
             {
                 convertedText += $"\"{(string)value}\"";
             }
+            else if(value is DateTime)
+            {
+                convertedText += ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ss");
+            }
             else
             {
                 convertedText += value.ToString();
@@ -194,6 +210,27 @@ namespace ANTLR_Test.Classes
                         {
                             equals = formula.Equals(((double)value).ToString("G", CultureInfo.InvariantCulture));
                         }
+                        else if(value is DateTime)
+                        {
+                            Logger.DebugLine($"Value is Datetime, value: {value.ToString()}, formula: {(string)formula}", 1);
+                            if (int.TryParse((string)formula, out int result))
+                            {
+                                DateTime date = new DateTime(1900, 1, 1).AddDays(result);
+                                equals = true;
+                                Logger.DebugLine($"Formula is int, date: {date.ToString()}, value date: {(DateTime)value}", 10);
+                            }
+                            else if(DateTime.TryParse((string)formula, out DateTime resultDate))
+                            {
+                                equals = true;
+                                Logger.DebugLine($"Formula is datetime, resultDate: {resultDate.ToString()}, value date: {(DateTime)value}", 1);
+
+                            }
+                            else
+                            {
+                                Logger.DebugLine($"Couldnt compare DateTime, value: {value.ToString()}, formula: {(string)formula}", 2);
+                                equals = false;
+                            }
+                        }
                         else
                         {
                             equals = formula.Equals(value.ToString());
@@ -228,8 +265,19 @@ namespace ANTLR_Test.Classes
                         ExcelFormulaParser excelFormulaParser = new ExcelFormulaParser(commonTokenStream);
 
                         ExcelFormulaParser.ExcelExprContext context = excelFormulaParser.excelExpr();
+                        if (excelFormulaParser.NumberOfSyntaxErrors > 0)
+                        {
+                            Logger.DebugLine($"Found Syntax Error - Dont processing formula at {i}, {j} : {(string)formula}", 10);
+                            if (GlobalSettings.ImportStopAtSyntaxError)
+                            {
+                                Console.WriteLine($"Enter to continue");
+                                Console.ReadLine();
+                            }
+                            continue;
+                        }
                         ExcelFormulaVisitor visitor = new ExcelFormulaVisitor();
                         string formulaText = visitor.Visit(context);
+                        
                         Logger.DebugLine($"FormulaText: {formulaText}", 1);
 
                         convertedText += $"C[{j}|{i}] = ({formulaText})\n";
@@ -237,6 +285,12 @@ namespace ANTLR_Test.Classes
                     }
                 }
             }
+        }
+
+        private bool compareDatesWithLeway(DateTime value, DateTime date, int daysLeway)
+        {
+            var time = value - date;
+            return Math.Abs(time.Days) <= daysLeway;
         }
     }
 }

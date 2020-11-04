@@ -55,6 +55,12 @@ namespace ANTLR_Test.Classes
             return $"{left} && {right}";
         }
 
+        public override string VisitBracketExp([NotNull] ExcelFormulaParser.BracketExpContext context)
+        {
+            var exp = Visit(context.expr);
+            return $"({exp})";
+        }
+
         public override string VisitDivExp([NotNull] ExcelFormulaParser.DivExpContext context)
         {
             var left = Visit(context.left);
@@ -208,42 +214,23 @@ namespace ANTLR_Test.Classes
 
         public override string VisitBaseAdress([NotNull] ExcelFormulaParser.BaseAdressContext context)
         {
-            var rowText = context.row.Text;
-            var row = convertRowToIndexText(rowText);
-            var column = context.column.Text;
+            var adressText = context.CELLADRESS().GetText();
+            Tuple<int, int> result = convertAdressToRowColumn(adressText);
+            //var row = convertRowToIndex(result.Item1);
+            //var column = result.Item2;
 
-            lastAdress = convertAdressTextToTuple(row, column);
-            return $"C[{row}|{column}]";
+            lastAdress = result;
+            return $"C[{result.Item1}|{result.Item2}]";
         }
 
-        public override string VisitBothLockAdress([NotNull] ExcelFormulaParser.BothLockAdressContext context)
+        private Tuple<int, int> convertAdressToRowColumn(string adressText)
         {
-            var rowText = context.row.Text;
-            var row = convertRowToIndexText(rowText);
-            var column = context.column.Text;
-
-            lastAdress = convertAdressTextToTuple(row, column);
-            return $"C[{row}|{column}]";
-        }
-
-        public override string VisitColumnLockAdress([NotNull] ExcelFormulaParser.ColumnLockAdressContext context)
-        {
-            var rowText = context.row.Text;
-            var row = convertRowToIndexText(rowText);
-            var column = context.column.Text;
-
-            lastAdress = convertAdressTextToTuple(row, column);
-            return $"C[{row}|{column}]";
-        }
-
-        public override string VisitRowLockAdress([NotNull] ExcelFormulaParser.RowLockAdressContext context)
-        {
-            var rowText = context.row.Text;
-            var row = convertRowToIndexText(rowText);
-            var column = context.column.Text;
-
-            lastAdress = convertAdressTextToTuple(row, column);
-            return $"C[{row}|{column}]";
+            string cleanedText = adressText.Replace("$", "");
+            string columnText = new string(cleanedText.SkipWhile(c => !char.IsDigit(c)).ToArray());
+            string rowText = cleanedText.Replace(columnText, "");
+            int row = convertRowToIndex(rowText);
+            int column = int.Parse(columnText);
+            return new Tuple<int, int>(row, column);
         }
 
 
@@ -281,6 +268,23 @@ namespace ANTLR_Test.Classes
             return $"SUM{args}";
         }
 
+        public override string VisitAverageFunc([NotNull] ExcelFormulaParser.AverageFuncContext context)
+        {
+            var args = Visit(context.anyArg());
+            return $"AVERAGE{args}";
+        }
+
+        public override string VisitMaxFunc([NotNull] ExcelFormulaParser.MaxFuncContext context)
+        {
+            var args = Visit(context.anyArg());
+            return $"MAX{args}";
+        }
+
+        public override string VisitMinFunc([NotNull] ExcelFormulaParser.MinFuncContext context)
+        {
+            var args = Visit(context.anyArg());
+            return $"MIN{args}";
+        }
 
         //====================================================
         //Function Arguments
@@ -316,7 +320,7 @@ namespace ANTLR_Test.Classes
             int counter = 0;
             string childText = "";
 
-            for (int i = left.Item1; i<=right.Item1; i++)
+            for (int i = left.Item1; i <= right.Item1; i++)
             {
                 for (int j = left.Item2; j <= right.Item2; j++)
                 {

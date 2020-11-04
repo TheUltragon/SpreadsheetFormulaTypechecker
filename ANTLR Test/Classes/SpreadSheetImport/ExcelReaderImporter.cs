@@ -15,7 +15,7 @@ namespace ANTLR_Test.Classes
     {
         private string _newFile;
 
-        public override void ImportFile(string path)
+        public override void ImportFile(string path, string output)
         {
             DataSet data = GetExcelData(path);
             for(int i = 0; i<data.Tables.Count; i++)

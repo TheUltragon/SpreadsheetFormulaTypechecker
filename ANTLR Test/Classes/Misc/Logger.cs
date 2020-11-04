@@ -42,10 +42,10 @@ namespace ANTLR_Test.Classes
                 if(MinLevelToConsole <= level)
                 {
                     Console.Write(text);
-                }
-                if (!string.IsNullOrEmpty(OutputFilePath))
-                {
-                    Output += text;
+                    if (!string.IsNullOrEmpty(OutputFilePath))
+                    {
+                        Output += text;
+                    }
                 }
             }
         }

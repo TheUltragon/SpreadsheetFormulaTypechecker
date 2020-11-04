@@ -79,52 +79,41 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\AbstractFormulaNode.cs" />
-    <Compile Include="Classes\AbstractFormula.cs" />
-    <Compile Include="Classes\AbstractFormulas.cs" />
-    <Compile Include="Classes\AbstractZones.cs" />
-    <Compile Include="Classes\DataRepository.cs" />
-    <Compile Include="Classes\ErrorHandler.cs" />
-    <Compile Include="Classes\ReflectiveEnumerator.cs" />
+    <Compile Include="Classes\AbstractFormulas\AbstractFormulaNode.cs" />
+    <Compile Include="Classes\AbstractFormulas\AbstractFormula.cs" />
+    <Compile Include="Classes\AbstractFormulas\AbstractFormulas.cs" />
+    <Compile Include="Classes\AbstractFormulas\AbstractZones.cs" />
+    <Compile Include="Classes\Misc\GlobalSettings.cs" />
+    <Compile Include="Classes\Visitors\DataRepository.cs" />
+    <Compile Include="Classes\Visitors\ErrorHandler.cs" />
+    <Compile Include="Classes\Misc\ReflectiveEnumerator.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelFormulaVisitor.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelInteropImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelReaderImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\SpreadSheetImporter.cs" />
-    <Compile Include="Classes\Logger.cs" />
+    <Compile Include="Classes\Misc\Logger.cs" />
     <Compile Include="Classes\SpreadSheetImport\LinqToExcelImporter.cs" />
-    <Compile Include="Classes\TypecheckVisitor.cs" />
+    <Compile Include="Classes\Visitors\TypecheckVisitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Classes\Variable.cs" />
-    <Compile Include="Classes\InterpreterVisitor.cs" />
+    <Compile Include="Classes\Visitors\Variable.cs" />
+    <Compile Include="Classes\Visitors\InterpreterVisitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Data\Corpus\02rise.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\03PFMJOURnalBOOKSFina#A7ED3.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\03Q1MAJORE2.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\03Q3MAJORE2_2.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\12-31-03%25207%2520Year%2520F#A7AD8.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\4.f._FinReport.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Corpus\BKUP\5_Year_Summary3.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Antlr4 Include="ExcelFormula.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
+    <None Include="Data\Corpus\01-38-PK_tables-figures.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Corpus\BKUP\act3_lab23_posey.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Corpus\BKUP\posey_Q1.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <Antlr4 Include="Spreadsheet.g4">
       <Generator>MSBuild:Compile</Generator>
@@ -214,7 +203,11 @@
     <Content Include="Data\Imports\NON-EMPTY.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Data\Corpus\NON-EMPTY.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

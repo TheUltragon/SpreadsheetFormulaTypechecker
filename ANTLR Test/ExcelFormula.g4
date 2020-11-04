@@ -10,8 +10,8 @@ excelExpr
 
 exp
 	: fun=fexp														#functionExp
-	| cell=celladress												#cellExp
 	| val=value														#valueExp
+	| '(' expr=exp ')'												#bracketExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
 	| left=exp '%' right=exp										#modExp
@@ -25,7 +25,9 @@ exp
 	| left=exp '!=' right=exp										#unequalExp
 	| left=exp '&&' right=exp										#andExp
 	| left=exp '||' right=exp										#orExp
+	| '-' param=exp													#negExp
 	| '!' param=exp													#notExp
+	| cell=celladress												#cellExp
 	;
 
 fexp
@@ -33,6 +35,9 @@ fexp
 	| 'ISBLANK' oneArg												#isblankFunc
 	| 'SUM' anyArg													#sumFunc
 	| 'PROD' anyArg													#prodFunc
+	| 'AVERAGE' anyArg												#averageFunc
+	| 'MAX' anyArg													#maxFunc
+	| 'MIN' anyArg													#minFunc
 	;
 
 oneArg
@@ -40,23 +45,20 @@ oneArg
 	;
 
 twoArg
-	: '(' exp1=exp ',' exp2=exp ')'
+	: '(' exp1=exp KOMMA exp2=exp ')'
 	;
 
 threeArg
-	: '(' exp1=exp ',' exp2=exp ',' exp3=exp ')'
+	: '(' exp1=exp KOMMA exp2=exp KOMMA exp3=exp ')'
 	;
 
 anyArg
-	: '(' expr+=exp (',' expr+=exp)* ')'							#anyArgBase
-	| '(' left=celladress ':' right=celladress ')'								#anyArgSeq
+	: '(' expr+=exp (KOMMA expr+=exp)* ')'									#anyArgBase
+	| '(' left=celladress ':' right=celladress ')'							#anyArgSeq
 	;
 
 celladress
-	: row=CELLROW column=CELLCOLUMN											#baseAdress
-	| '$' row=CELLROW column=CELLCOLUMN										#rowLockAdress
-	| row=CELLROW '$' column=CELLCOLUMN										#columnLockAdress
-	| '$' row=CELLROW '$' column=CELLCOLUMN									#bothLockAdress
+	: CELLADRESS															#baseAdress
 	;
 
 value
@@ -78,6 +80,8 @@ value
  * Lexer Rules
  */
 
+
+
 WS
 	:	' ' -> skip
 	;
@@ -96,28 +100,29 @@ COMMENT
         ) -> skip
     ;
 
+KOMMA
+	:	[,;]
+	;
+
 EMPTY
 	: '\\'
 	;
 
-CELLROW
-	: [A-Z]+
+INT     
+	: NONFRACTPOSNUMBER
 	;
 
-CELLCOLUMN
-	: NONFRACTPOSNUMBER+
+CELLADRESS
+	: [$]? [A-Z]+ [$]? NONFRACTPOSNUMBER
 	;
 
 CHAR
 	: '\''[a-zA-Z]'\''
 	;
 
-INT     
-	: [-+]?[0-9]+
-	;
 
 DECIMAL     
-	: [-+]?[0-9]+ [.] [0-9]+
+	: [0-9]+ [.] [0-9]+
 	;
 
 EUROS
@@ -150,15 +155,15 @@ fragment EscapeSequence
 	;
 
 fragment NUMBER
-	: [-+]? POSNUMBER
+	: POSNUMBER
 	;
 
 fragment POSNUMBER
-	: NONFRACTPOSNUMBER ([.,] [0-9]+)?
+	: NONFRACTPOSNUMBER ([.] [0-9]+)?
 	;
 
 fragment NONFRACTPOSNUMBER
-	: [1-9][0-9]*
+	: [0-9]+
 	;
 
 fragment MONTHNUMBER
