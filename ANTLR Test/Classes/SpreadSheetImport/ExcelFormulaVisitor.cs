@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Antlr4.Runtime.Misc;
+using Antlr4.Runtime.Tree;
 
 namespace ANTLR_Test.Classes
 {
@@ -114,6 +115,13 @@ namespace ANTLR_Test.Classes
             return $"{left} * {right}";
         }
 
+        public override string VisitNegExp([NotNull] ExcelFormulaParser.NegExpContext context)
+        {
+            var param = Visit(context.param);
+
+            return $"-{param}";
+        }
+
         public override string VisitNotExp([NotNull] ExcelFormulaParser.NotExpContext context)
         {
             var param = Visit(context.param);
@@ -127,6 +135,13 @@ namespace ANTLR_Test.Classes
             var right = Visit(context.right);
 
             return $"{left} || {right}";
+        }
+
+        public override string VisitPosExp([NotNull] ExcelFormulaParser.PosExpContext context)
+        {
+            var param = Visit(context.param);
+
+            return $"{param}";
         }
 
         public override string VisitSmallerEqExp([NotNull] ExcelFormulaParser.SmallerEqExpContext context)
@@ -212,6 +227,16 @@ namespace ANTLR_Test.Classes
             return "" + index;
         }
 
+        private Tuple<int, int> convertAdressToRowColumn(string adressText)
+        {
+            string cleanedText = adressText.Replace("$", "");
+            string columnText = new string(cleanedText.SkipWhile(c => !char.IsDigit(c)).ToArray());
+            string rowText = cleanedText.Replace(columnText, "");
+            int row = convertRowToIndex(rowText);
+            int column = int.Parse(columnText);
+            return new Tuple<int, int>(row, column);
+        }
+
         public override string VisitBaseAdress([NotNull] ExcelFormulaParser.BaseAdressContext context)
         {
             var adressText = context.CELLADRESS().GetText();
@@ -223,16 +248,17 @@ namespace ANTLR_Test.Classes
             return $"C[{result.Item1}|{result.Item2}]";
         }
 
-        private Tuple<int, int> convertAdressToRowColumn(string adressText)
+        public override string VisitSheetAdress([NotNull] ExcelFormulaParser.SheetAdressContext context)
         {
-            string cleanedText = adressText.Replace("$", "");
-            string columnText = new string(cleanedText.SkipWhile(c => !char.IsDigit(c)).ToArray());
-            string rowText = cleanedText.Replace(columnText, "");
-            int row = convertRowToIndex(rowText);
-            int column = int.Parse(columnText);
-            return new Tuple<int, int>(row, column);
+            //TODO: Implement reference to other sheet
+            Logger.DebugLine("Sheet Adress visited, not supported yet in typechecker!", 10);
+            if (GlobalSettings.ImportStopAtUnsupportedError)
+            {
+                Console.WriteLine($"Enter to continue");
+                Console.ReadLine();
+            }
+            return "";
         }
-
 
 
         //====================================================
@@ -256,6 +282,12 @@ namespace ANTLR_Test.Classes
             return $"ISBLANK{args}";
         }
 
+        public override string VisitIsnaFunc([NotNull] ExcelFormulaParser.IsnaFuncContext context)
+        {
+            var args = Visit(context.oneArg());
+            return $"ISNA{args}";
+        }
+
         public override string VisitProdFunc([NotNull] ExcelFormulaParser.ProdFuncContext context)
         {
             var args = Visit(context.anyArg());
@@ -266,6 +298,18 @@ namespace ANTLR_Test.Classes
         {
             var args = Visit(context.anyArg());
             return $"SUM{args}";
+        }
+
+        public override string VisitOrFunc([NotNull] ExcelFormulaParser.OrFuncContext context)
+        {
+            var args = Visit(context.anyArg());
+            return $"OR{args}";
+        }
+
+        public override string VisitAndFunc([NotNull] ExcelFormulaParser.AndFuncContext context)
+        {
+            var args = Visit(context.anyArg());
+            return $"AND{args}";
         }
 
         public override string VisitAverageFunc([NotNull] ExcelFormulaParser.AverageFuncContext context)
@@ -284,6 +328,57 @@ namespace ANTLR_Test.Classes
         {
             var args = Visit(context.anyArg());
             return $"MIN{args}";
+        }
+
+        public override string VisitRoundupFunc([NotNull] ExcelFormulaParser.RoundupFuncContext context)
+        {
+            var args = Visit(context.twoArg());
+            return $"ROUNDUP{args}";
+        }
+
+        public override string VisitNFunc([NotNull] ExcelFormulaParser.NFuncContext context)
+        {
+            var args = Visit(context.oneArg());
+            return $"N{args}";
+        }
+
+
+        //Unsupported Functions
+
+        public override string VisitSumifFunc([NotNull] ExcelFormulaParser.SumifFuncContext context)
+        {
+            //TODO: Implement reference to other sheet
+            Logger.DebugLine("SUMIF Function expression visited, not supported yet in typechecker!", 10);
+            if (GlobalSettings.ImportStopAtUnsupportedError)
+            {
+                Console.WriteLine($"Enter to continue");
+                Console.ReadLine();
+            }
+            return "";
+        }
+
+        public override string VisitVlookupFunc([NotNull] ExcelFormulaParser.VlookupFuncContext context)
+        {
+            //TODO: Implement reference to other sheet
+            Logger.DebugLine("VLOOKUP Function expression visited, not supported yet in typechecker!", 10);
+            if (GlobalSettings.ImportStopAtUnsupportedError)
+            {
+                Console.WriteLine($"Enter to continue");
+                Console.ReadLine();
+            }
+            return "";
+        }
+
+        public override string VisitNaFunc([NotNull] ExcelFormulaParser.NaFuncContext context)
+        {
+            //TODO: Implement reference to other sheet
+            Logger.DebugLine("NA Function expression visited, not supported yet in typechecker!", 10);
+            if (GlobalSettings.ImportStopAtUnsupportedError)
+            {
+                Console.WriteLine($"Enter to continue");
+                Console.ReadLine();
+            }
+            return "";
         }
 
         //====================================================
@@ -419,6 +514,15 @@ namespace ANTLR_Test.Classes
         public override string VisitTrueVal([NotNull] ExcelFormulaParser.TrueValContext context)
         {
             return "true";
+        }
+
+        //====================================================
+        //Error Handling
+        //====================================================
+
+        public override string VisitErrorNode([NotNull] IErrorNode node)
+        {
+            throw new Exception($"Error Node reached with text {node.GetText()}.");
         }
     }
 }

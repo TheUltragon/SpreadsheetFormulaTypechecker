@@ -14,7 +14,31 @@ namespace ANTLR_Test.Classes
             ParentFormula = formula;
         }
         public abstract AbstractFormulaNode Simplify();
+
+        public static string ListNodesToString(List<AbstractFormulaNode> list)
+        {
+            string result = "";
+            bool first = true;
+            foreach (var elem in list)
+            {
+                if (first)
+                {
+                    result += elem.ToString();
+                    first = false;
+                }
+                else
+                {
+                    result += ", " + elem.ToString();
+
+                }
+            }
+            return result;
+        }
     }
+
+    //================================
+    //Basic Nodes
+    //================================
 
     public class AbstractErrorNode : AbstractFormulaNode
     {
@@ -98,136 +122,11 @@ namespace ANTLR_Test.Classes
         }
     }
 
-    public abstract class AbstractFunctionNode : AbstractFormulaNode
-    {
-        public AbstractFunctionNode(AbstractFormula formula) : base(formula) { }
-    }
-
-    public class AbstractProductNode : AbstractFunctionNode
-    {
-        public List<AbstractFormulaNode> Children;
-
-        public AbstractProductNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
-        {
-            Children = children;
-        }
-
-        public override AbstractFormulaNode Simplify()
-        {
-            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
-            bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
-            foreach (var child in Children)
-            {
-                var newChild = child.Simplify();
-                newChildren.Add(newChild);
-                if(newChild is AbstractTypeNode && simplifySuccess)
-                {
-                    var tp = ((AbstractTypeNode)newChild).Type;
-                    if (VarTypeExtensions.IsNumeric(tp)){
-                        var originalHighest = highestType;
-                        highestType = VarTypeExtensions.GetHighestNumericType(tp, originalHighest);
-                    }
-                    else
-                    {
-                        Logger.DebugLine("Typecheck Error on Simplify Product Function - Type " + tp.ToString(), 10);
-                        simplifySuccess = false;
-                    }
-                }
-                else
-                {
-                    simplifySuccess = false;
-                }
-            }
-
-            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
-            if(simplifySuccess)
-            {
-                return new AbstractTypeNode(ParentFormula, highestType);
-            }
-            else
-            {
-                Children = newChildren;
-                return this;
-            }
-        }
-
-        public override string ToString()
-        {
-            string result = "ProductNode: Children: ";
-            foreach(var child in Children)
-            {
-                result += child.ToString() + ", ";
-            }
-
-            return result;
-        }
-    }
-
-    public class AbstractSumNode : AbstractFunctionNode
-    {
-        public List<AbstractFormulaNode> Children;
-
-        public AbstractSumNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
-        {
-            Children = children;
-        }
-
-        public override AbstractFormulaNode Simplify()
-        {
-            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
-            bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
-            foreach (var child in Children)
-            {
-                var newChild = child.Simplify();
-                newChildren.Add(newChild);
-                if (newChild is AbstractTypeNode && simplifySuccess)
-                {
-                    var tp = ((AbstractTypeNode)newChild).Type;
-                    if (VarTypeExtensions.IsNumeric(tp))
-                    {
-                        var originalHighest = highestType;
-                        highestType = VarTypeExtensions.GetHighestNumericType(tp, originalHighest);
-                    }
-                    else
-                    {
-                        Logger.DebugLine("Typecheck Error on Simplify Sum Function - Type " + tp.ToString(), 10);
-                        simplifySuccess = false;
-                    }
-                }
-                else
-                {
-                    simplifySuccess = false;
-                }
-            }
-
-            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
-            if (simplifySuccess)
-            {
-                return new AbstractTypeNode(ParentFormula, highestType);
-            }
-            else
-            {
-                Children = newChildren;
-                return this;
-            }
-        }
-
-        public override string ToString()
-        {
-            string result = "SumNode: Children: ";
-            foreach (var child in Children)
-            {
-                result += child.ToString() + ", ";
-            }
-
-            return result;
-        }
-    }
 
 
-
+    //================================
+    //Operator Nodes
+    //================================
 
     public abstract class AbstractOperatorNode : AbstractFormulaNode
     {
@@ -240,7 +139,7 @@ namespace ANTLR_Test.Classes
 
         public AbstractAddNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
         {
-            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1,child2);
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
         }
 
         public override AbstractFormulaNode Simplify()
@@ -248,22 +147,13 @@ namespace ANTLR_Test.Classes
             var child1 = Children.Item1.Simplify();
             var child2 = Children.Item2.Simplify();
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
-            if(Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
                 VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
                 VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                if(tp1 == tp2)
+                if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, tp1);
-                }
-                else if (tp1.IsNumeric() && tp2.IsNumeric())
-                {
-                    return new AbstractTypeNode(ParentFormula, VarTypeExtensions.GetHighestNumericType(tp1, tp2));
-                }
-                else if (tp1.IsText() && tp2.IsText())
-                {
-                    //Char and Char or Char and string always returns a string
-                    return new AbstractTypeNode(ParentFormula, VarType.String);
+                    return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
                 }
             }
 
@@ -295,13 +185,9 @@ namespace ANTLR_Test.Classes
             {
                 VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
                 VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                if (tp1 == tp2)
+                if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, tp1);
-                }
-                else if (tp1.IsNumeric() && tp2.IsNumeric())
-                {
-                    return new AbstractTypeNode(ParentFormula, VarTypeExtensions.GetHighestNumericType(tp1, tp2));
+                    return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
                 }
             }
 
@@ -311,6 +197,1008 @@ namespace ANTLR_Test.Classes
         public override string ToString()
         {
             string result = $"SubNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractMultNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractMultNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"MultNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractDivNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractDivNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1.IsNumeric() && tp2.IsNumeric())
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Decimal);
+                }
+                else if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
+                }
+
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"DivNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractModNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractModNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"ModNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractSmallerNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractSmallerNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"SmallerNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractGreaterNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractGreaterNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"GreaterNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractGreaterEqNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractGreaterEqNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"GreaterEqNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractSmallerEqNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractSmallerEqNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"SmallerEqNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractEqualNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractEqualNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"EqualNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractUnequalNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractUnequalNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (Compatibility.IsCompatible(tp1, tp2))
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"UnequalNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractAndNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractAndNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1 == tp2 && tp1 == VarType.Bool)
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"AndNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractOrNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractOrNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1 == tp2 && tp1 == VarType.Bool)
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"OrNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractNotNode : AbstractOperatorNode
+    {
+        public AbstractFormulaNode Child;
+
+        public AbstractNotNode(AbstractFormula formula, AbstractFormulaNode child) : base(formula)
+        {
+            Child = child;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child = Child.Simplify();
+            Child = child;
+            if (Child is AbstractTypeNode)
+            {
+                VarType tp = ((AbstractTypeNode)Child).Type;
+                if (tp == VarType.Bool)
+                {
+                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"NotNode: Child: {Child.ToString()}";
+            return result;
+        }
+    }
+
+
+
+
+    //================================
+    //Function Nodes
+    //================================
+
+
+    public abstract class AbstractFunctionNode : AbstractFormulaNode
+    {
+        public AbstractFunctionNode(AbstractFormula formula) : base(formula) { }
+    }
+
+    public class AbstractProdFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractProdFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Int;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if(newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify Product Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if(simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "ProdFuncNode: Children: ";
+            result += ListNodesToString(Children);
+            return result;
+        }
+    }
+
+    public class AbstractSumFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractSumFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Int;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if (newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify Sum Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if (simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "SumFuncNode: Children: ";
+            result += ListNodesToString(Children);
+
+            return result;
+        }
+    }
+
+
+    public class AbstractAndFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractAndFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Bool;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if (newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify And Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if (simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "AndFuncNode: Children: ";
+            result += ListNodesToString(Children);
+
+            return result;
+        }
+    }
+
+
+    public class AbstractOrFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractOrFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Int;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if (newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify Or Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if (simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "OrFuncNode: Children: ";
+            result += ListNodesToString(Children);
+
+            return result;
+        }
+    }
+
+
+
+    public class AbstractAverageFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractAverageFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Int;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if (newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify Average Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if (simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "AverageFuncNode: Children: ";
+            result += ListNodesToString(Children);
+
+            return result;
+        }
+    }
+
+    public class AbstractMaxFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractMaxFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Int;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if (newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify Max Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if (simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "MaxFuncNode: Children: ";
+            result += ListNodesToString(Children);
+
+            return result;
+        }
+    }
+
+
+
+
+    public class AbstractMinFuncNode : AbstractFunctionNode
+    {
+        public List<AbstractFormulaNode> Children;
+
+        public AbstractMinFuncNode(AbstractFormula formula, List<AbstractFormulaNode> children) : base(formula)
+        {
+            Children = children;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
+            bool simplifySuccess = true;
+            VarType highestType = VarType.Int;
+            foreach (var child in Children)
+            {
+                var newChild = child.Simplify();
+                newChildren.Add(newChild);
+                if (newChild is AbstractTypeNode && simplifySuccess)
+                {
+                    var tp = ((AbstractTypeNode)newChild).Type;
+                    if (Compatibility.IsCompatible(tp, highestType))
+                    {
+                        highestType = Compatibility.GetHigherType(tp, highestType);
+                    }
+                    else
+                    {
+                        Logger.DebugLine("Typecheck Error on Simplify Min Function - Type " + tp.ToString(), 10);
+                        simplifySuccess = false;
+                    }
+                }
+                else
+                {
+                    simplifySuccess = false;
+                }
+            }
+
+            //If all children were AbstractTypeNodes with numeric type, then this node can be simplified to the highest of these types
+            if (simplifySuccess)
+            {
+                return new AbstractTypeNode(ParentFormula, highestType);
+            }
+            else
+            {
+                Children = newChildren;
+                return this;
+            }
+        }
+
+        public override string ToString()
+        {
+            string result = "MinFuncNode: Children: ";
+            result += ListNodesToString(Children);
+
+            return result;
+        }
+    }
+
+    public class AbstractRoundupFuncNode : AbstractFunctionNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractRoundupFuncNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode> (child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1.IsNumeric() && tp2 == VarType.Int)
+                {
+                    return new AbstractTypeNode(ParentFormula, tp1);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"RoundupFuncNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractIfFuncNode : AbstractFunctionNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractIfFuncNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2, AbstractFormulaNode child3) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode, AbstractFormulaNode>(child1, child2, child3);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            var child3 = Children.Item3.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode, AbstractFormulaNode>(child1, child2, child3);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode && Children.Item3 is AbstractTypeNode)
+            {
+                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                VarType tp3 = ((AbstractTypeNode)Children.Item3).Type;
+                if (tp1 == VarType.Bool && Compatibility.IsCompatible(tp2, tp3))
+                {
+                    return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp2, tp3));
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"IfFuncNode: Children: If: {Children.Item1.ToString()}, Then: {Children.Item2.ToString()} Else: {Children.Item3.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractIsblankFuncNode : AbstractFunctionNode
+    {
+        public AbstractFormulaNode Child;
+
+        public AbstractIsblankFuncNode(AbstractFormula formula, AbstractFormulaNode child) : base(formula)
+        {
+            Child = child;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child = Child.Simplify();
+            Child = child;
+            if (!(Child is AbstractErrorNode))
+            {
+                return new AbstractTypeNode(ParentFormula, VarType.Bool);
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"IsblankFuncNode: Child: {Child.ToString()}";
+            return result;
+        }
+    }
+
+
+    public class AbstractIsnaFuncNode : AbstractFunctionNode
+    {
+        public AbstractFormulaNode Child;
+
+        public AbstractIsnaFuncNode(AbstractFormula formula, AbstractFormulaNode child) : base(formula)
+        {
+            Child = child;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child = Child.Simplify();
+            Child = child;
+            if (!(Child is AbstractErrorNode))
+            {
+                return new AbstractTypeNode(ParentFormula, VarType.Bool);
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"IsnaFuncNode: Child: {Child.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractNFuncNode : AbstractFunctionNode
+    {
+        public AbstractFormulaNode Child;
+
+        public AbstractNFuncNode(AbstractFormula formula, AbstractFormulaNode child) : base(formula)
+        {
+            Child = child;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child = Child.Simplify();
+            Child = child;
+            if (Child is AbstractTypeNode)
+            {
+                AbstractTypeNode typeNode = (AbstractTypeNode)Child;
+                if(typeNode.Type == VarType.TypeError || typeNode.Type.IsNumeric()){
+                    return typeNode;
+                }
+                return new AbstractTypeNode(ParentFormula, VarType.Int);
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"NFuncNode: Child: {Child.ToString()}";
             return result;
         }
     }

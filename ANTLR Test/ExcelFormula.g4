@@ -17,27 +17,44 @@ exp
 	| left=exp '%' right=exp										#modExp
 	| left=exp '+' right=exp										#addExp
 	| left=exp '-' right=exp										#subExp				
+	| left=exp '&' right=exp										#concatExp
 	| left=exp '<' right=exp										#smallerExp
 	| left=exp '>' right=exp										#greaterExp
 	| left=exp '<=' right=exp										#smallerEqExp
 	| left=exp '>=' right=exp										#greaterEqExp
-	| left=exp '==' right=exp										#equalExp
-	| left=exp '!=' right=exp										#unequalExp
+	| left=exp '=' right=exp										#equalExp
+	| left=exp '<>' right=exp										#unequalExp
 	| left=exp '&&' right=exp										#andExp
 	| left=exp '||' right=exp										#orExp
+	| '+' param=exp													#posExp
 	| '-' param=exp													#negExp
 	| '!' param=exp													#notExp
 	| cell=celladress												#cellExp
 	;
 
 fexp
+	//Supported Functions
 	: 'IF' threeArg													#ifFunc
 	| 'ISBLANK' oneArg												#isblankFunc
+	| 'ISNA' oneArg													#isnaFunc
 	| 'SUM' anyArg													#sumFunc
 	| 'PROD' anyArg													#prodFunc
+	| 'AND' anyArg													#andFunc
+	| 'OR' anyArg													#orFunc
 	| 'AVERAGE' anyArg												#averageFunc
 	| 'MAX' anyArg													#maxFunc
 	| 'MIN' anyArg													#minFunc
+	| 'ROUNDUP' twoArg												#roundupFunc
+	| 'N' oneArg													#nFunc
+	
+	//Not Supported Functions
+	| 'VLOOKUP' unsupportedArg										#vlookupFunc
+	| 'SUMIF' unsupportedArg										#sumifFunc
+	| 'NA' unsupportedArg											#naFunc													
+	;
+
+emptyArg
+	: '(' ')'
 	;
 
 oneArg
@@ -57,13 +74,18 @@ anyArg
 	| '(' left=celladress ':' right=celladress ')'							#anyArgSeq
 	;
 
+unsupportedArg
+	: '(' .*? ')'
+	;
+
 celladress
-	: CELLADRESS															#baseAdress
+	: CELLADRESS													#baseAdress
+	| SHEETADRESS													#sheetAdress									
 	;
 
 value
-	: 'True'														#trueVal
-	| 'False'														#falseVal
+	: 'TRUE'														#trueVal
+	| 'FALSE'														#falseVal
 	| CHAR															#charVal
 	| INT															#intVal
 	| DECIMAL														#decimalVal
@@ -112,9 +134,14 @@ INT
 	: NONFRACTPOSNUMBER
 	;
 
+SHEETADRESS
+	: ['"]? NAME ['"]? '!' CELLADRESS
+	;
+
 CELLADRESS
 	: [$]? [A-Z]+ [$]? NONFRACTPOSNUMBER
 	;
+
 
 CHAR
 	: '\''[a-zA-Z]'\''
@@ -137,6 +164,8 @@ STRING
     : '"' ( EscapeSequence | ~('\\'|'"') )* '"'
     ;
 
+
+
 DATE
 	: CALENDARDATE 'T' DATEDAYTIME
 	;
@@ -148,6 +177,10 @@ CALENDARDATE
 DATEDAYTIME
 	: TIMENUMBER ':' TIMENUMBER ':' TIMENUMBER
 	;
+
+fragment NAME
+    : [a-zA-Z][a-zA-Z0-9\-_ .:;]*
+    ;
 
 fragment EscapeSequence
     : '\\' [abfnrtvz"'\\]

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using ANTLR_Test.Classes;
+using Antlr4.Runtime.Misc;
 
 namespace ANTLR_Test
 {
@@ -16,13 +17,14 @@ namespace ANTLR_Test
         Error,
         Import,
         ImportTest,
+        HandmadeImport,
         All
     }
     class Program
     {
         static void Main(string[] args)
         {
-            Testrun testing = Testrun.ImportTest;
+            Testrun testing = Testrun.Positive;
             Logger.SetActive(true);
             //Logger.SetOutputFile("Data\\Log.txt");
             Logger.SetMinDebugLevelToConsole(5);
@@ -43,6 +45,11 @@ namespace ANTLR_Test
             else if (testing == Testrun.ImportTest)
             {
                 ImportTest();
+                Import(testing);
+                TestSuite(testing);
+            }
+            else if (testing == Testrun.HandmadeImport)
+            {
                 Import(testing);
                 TestSuite(testing);
             }
@@ -95,7 +102,7 @@ namespace ANTLR_Test
             {
                 files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
             }
-            if (testing == Testrun.Import)
+            else if (testing == Testrun.Import || testing == Testrun.ImportTest || testing == Testrun.HandmadeImport)
             {
                 files.AddRange(ListFilesRecursively("Data\\Imports"));
             }
@@ -105,8 +112,8 @@ namespace ANTLR_Test
                 files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
                 files.AddRange(ListFilesRecursively("Data\\Imports"));
             }
-            Logger.DebugLine($"Going to parse {files.Count} files");
-            Logger.DebugLine("");
+            Logger.DebugLine($"Going to parse {files.Count} files", 10);
+            Logger.DebugLine("", 10);
 
             foreach (var file in files)
             {
@@ -138,7 +145,7 @@ namespace ANTLR_Test
 
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 Logger.DebugLine(reader.ReadToEnd(), 5);
-                Logger.DebugLine("====================================================", 10);
+                Logger.DebugLine("====================================================", 5);
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
 
 
@@ -158,11 +165,12 @@ namespace ANTLR_Test
 
                 SpreadsheetVisitor visitor = new TypecheckVisitor(handler);
                 
-                Logger.DebugLine("", 10);
+                Logger.DebugLine("", 0);
                 PrintContext(context, 0, 0);
                 Logger.DebugLine("", 0);
                 bool result = visitor.Visit(context);
-                Logger.DebugLine("Parsing has returned result: " + result, 10);
+                Logger.DebugLine("Basic Typechecking has returned result: " + result, 10);
+                Logger.DebugLine("===================================", 10);
                 if (result)
                 {
                     Logger.DebugLine("", 5);
@@ -178,8 +186,10 @@ namespace ANTLR_Test
                     {
                         Logger.DebugLine($"{formula.Key.Item1}, {formula.Key.Item2}: {formula.Value.ToString()}", 5);
                     }
+                    Logger.DebugLine("===================================", 5);
                 }
-                
+                Logger.DebugLine("", 10);
+
             }
         }
 
@@ -215,6 +225,10 @@ namespace ANTLR_Test
             {
                 files.AddRange(Directory.EnumerateFiles("Data\\Corpus"));
             }
+            else if (testing == Testrun.HandmadeImport)
+            {
+                files.AddRange(Directory.EnumerateFiles("Data\\Handmade Examples"));
+            }
 
             //excelReaderImporter.ImportFiles();
             //linqToExcelImporter.ImportFiles();
@@ -222,14 +236,21 @@ namespace ANTLR_Test
         }
         static void ImportTest()
         {
+            SyntaxErrorListener errorListener = new SyntaxErrorListener();
             string formula = "=MAX(B6-40;0)";
             AntlrInputStream inputStream = new AntlrInputStream((string)formula);
             ExcelFormulaLexer spreadsheetLexer = new ExcelFormulaLexer(inputStream);
+            spreadsheetLexer.AddErrorListener(errorListener);
             CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
             ExcelFormulaParser excelFormulaParser = new ExcelFormulaParser(commonTokenStream);
 
             ExcelFormulaParser.ExcelExprContext context = excelFormulaParser.excelExpr();
-            if (excelFormulaParser.NumberOfSyntaxErrors > 0)
+            if (SyntaxErrorListener.HasError)
+            {
+                Logger.DebugLine($"Found Lexer Error - Dont processing formula {(string)formula}", 10);
+                return;
+            }
+            if (excelFormulaParser.NumberOfSyntaxErrors > 0 )
             {
                 Logger.DebugLine($"Found Syntax Error - Dont processing formula {(string)formula}", 10);
                 return;
@@ -238,6 +259,16 @@ namespace ANTLR_Test
             string formulaText = visitor.Visit(context);
 
             Logger.DebugLine($"FormulaText: {formulaText}", 10);
+        }
+    }
+
+    public class SyntaxErrorListener : IAntlrErrorListener<int>
+    {
+        public static bool HasError = false;
+
+        public void SyntaxError([NotNull] IRecognizer recognizer, [Nullable] int offendingSymbol, int line, int charPositionInLine, [NotNull] string msg, [Nullable] RecognitionException e)
+        {
+            HasError = true;
         }
     }
 }

@@ -19,6 +19,7 @@ namespace ANTLR_Test.Classes
     {
         public static bool ImportStopAtMiscError = false;
         public static bool ImportStopAtSyntaxError = true;
+        public static bool ImportStopAtUnsupportedError = false;
         public static bool ImportStopAtNextFile = false;
         public static bool TypecheckerStopAtNextFile = false;
         public static bool TypecheckerStopSyntaxError = true;

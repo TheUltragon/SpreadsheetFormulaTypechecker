@@ -71,6 +71,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -83,9 +84,12 @@
     <Compile Include="Classes\AbstractFormulas\AbstractFormula.cs" />
     <Compile Include="Classes\AbstractFormulas\AbstractFormulas.cs" />
     <Compile Include="Classes\AbstractFormulas\AbstractZones.cs" />
+    <Compile Include="Classes\Misc\FormatStrings.cs" />
     <Compile Include="Classes\Misc\GlobalSettings.cs" />
-    <Compile Include="Classes\Visitors\DataRepository.cs" />
-    <Compile Include="Classes\Visitors\ErrorHandler.cs" />
+    <Compile Include="Classes\SpreadsheetVisitor\SpreadsheetVisitor.cs" />
+    <Compile Include="Classes\Utility\Compatibility.cs" />
+    <Compile Include="Classes\SpreadsheetVisitor\DataRepository.cs" />
+    <Compile Include="Classes\Typechecker\ErrorHandler.cs" />
     <Compile Include="Classes\Misc\ReflectiveEnumerator.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelFormulaVisitor.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelInteropImporter.cs" />
@@ -93,11 +97,10 @@
     <Compile Include="Classes\SpreadSheetImport\SpreadSheetImporter.cs" />
     <Compile Include="Classes\Misc\Logger.cs" />
     <Compile Include="Classes\SpreadSheetImport\LinqToExcelImporter.cs" />
-    <Compile Include="Classes\Visitors\TypecheckVisitor.cs" />
+    <Compile Include="Classes\Typechecker\TypecheckVisitor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Classes\Visitors\Variable.cs" />
-    <Compile Include="Classes\Visitors\InterpreterVisitor.cs" />
+    <Compile Include="Classes\SpreadsheetVisitor\Variable.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -105,13 +108,22 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
-    <None Include="Data\Corpus\01-38-PK_tables-figures.xls">
+    <None Include="Data\Corpus\BKUP\0XLSBudgetingWGP2.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Corpus\Aggregate%2520Governanc#A8A51.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Corpus\BKUP\01-38-PK_tables-figures.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Data\Corpus\BKUP\act3_lab23_posey.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Data\Corpus\BKUP\posey_Q1.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Handmade Example 1.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
@@ -200,6 +212,9 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Data\Handmade Examples\NON-EMPTY.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\Imports\NON-EMPTY.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

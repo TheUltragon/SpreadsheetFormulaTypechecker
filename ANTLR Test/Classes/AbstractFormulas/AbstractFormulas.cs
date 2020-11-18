@@ -81,6 +81,7 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
+                    Logger.DebugLine($"Error - Couldnt Translate Formula, abstractFormula.Translate returned false. For type {formula.GetType()} and Cellindex {cellIndex.ToString()}", 5);
                     success = false;
                     return null;
                 }

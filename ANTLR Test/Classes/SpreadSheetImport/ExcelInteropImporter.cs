@@ -19,12 +19,26 @@ namespace ANTLR_Test.Classes
         public override void ImportFile(string path, string output)
         {
             Application app = new Application();
-            Workbook workBook = app.Workbooks.Open(Path.GetFullPath(path));
+            try
+            {
+                Workbook workBook = app.Workbooks.Open(Path.GetFullPath(path));
+                handleWorkBook(workBook, path, output);
 
-            handleWorkBook(workBook, path, output);
-
-            workBook.Close(false, path, null);
-            Marshal.ReleaseComObject(workBook);
+                workBook.Close(false, path, null);
+                Marshal.ReleaseComObject(workBook);
+            }
+            catch(Exception e)
+            {
+                Logger.DebugLine($"Exception - Couldnt Import file from workbook at path {path}. Skipping workbook.", 10);
+                Logger.DebugLine($"Exception Text: {e.ToString()}", 1);
+                Logger.DebugLine($"Exception Stacktrace: {e.StackTrace}", 1);
+                if (GlobalSettings.ImportStopAtMiscError)
+                {
+                    Console.WriteLine($"Enter to continue");
+                    Console.ReadLine();
+                }
+            }
+            
         }
 
         private void handleWorkBook(Workbook workBook, string path, string output)
@@ -208,7 +222,48 @@ namespace ANTLR_Test.Classes
                     {
                         if (value is double)
                         {
-                            equals = formula.Equals(((double)value).ToString("G", CultureInfo.InvariantCulture));
+                            string valueString = ((double)value).ToString("G", CultureInfo.InvariantCulture);
+                            equals = ((string)formula).Equals(valueString);
+                            var valueStringComma = valueString.Replace(".", ",");
+                            var valueStringDot = valueString.Replace(",", ".");
+                            var formulaStringComma = ((string)formula).Replace(".", ",");
+                            var formulaStringDot = ((string)formula).Replace(",", ".");
+                            Logger.DebugLine($"Value is double, value: {valueString}, formula: {(string)formula}, equals: {equals}", 1);
+                            if (!equals)
+                            {
+                                equals = ((string)formula).Equals(valueStringComma) || ((string)formula).Equals(valueStringDot);
+                                Logger.DebugLine($"Dot Comma conversion check, valueStringComma: {valueStringComma}, valueStringDot: {valueStringDot}, formula: {(string)formula}, equals: {equals}", 1);
+                            }
+                            if (!equals)
+                            {
+                                string valueStringInstalled = ((double)value).ToString("G", CultureInfo.InstalledUICulture);
+                                equals = ((string)formula).Equals(valueStringInstalled);
+                                Logger.DebugLine($"Installed UI Culture ({CultureInfo.InstalledUICulture}) Equal check, value: {valueStringInstalled}, formula: {(string)formula}, equals: {equals}", 1);
+                            }
+                            if (!equals)
+                            {
+                                var culture = CultureInfo.CreateSpecificCulture("de-DE");
+                                string valueStringInstalled = ((double)value).ToString("G", culture);
+                                equals = ((string)formula).Equals(valueStringInstalled);
+                                Logger.DebugLine($"Specific Culture ({culture}) Equal check, value: {valueStringInstalled}, formula: {(string)formula}, equals: {equals}", 1);
+                            }
+                            if (!equals)
+                            {
+                                string valueStringDoubleFixedPoint = ((double)value).ToString(FormatStrings.DoubleFixedPoint, CultureInfo.InvariantCulture);
+                                equals = ((string)formula).Equals(valueStringDoubleFixedPoint);
+                                Logger.DebugLine($"Format DoubleFixedPoint with Culture ({CultureInfo.InvariantCulture}) Equal check, value: {valueStringDoubleFixedPoint}, formula: {(string)formula}, equals: {equals}", 1);
+                            }
+
+                            if (!equals && double.TryParse((string)formula, out double parsedFormula))
+                            {
+                                equals = IsDoubleEqual((double)value, parsedFormula);
+                                Logger.DebugLine($"Parsed formula to double, value: {(double)value}, parsedFormula: {parsedFormula}, equals: {equals}", 1);
+                            }
+
+                            if(!equals && (double.TryParse(formulaStringComma, out parsedFormula) || double.TryParse(formulaStringDot, out parsedFormula))){
+                                equals = IsDoubleEqual((double)value, parsedFormula);
+                                Logger.DebugLine($"Parsed formula dot comma to double, value: {(double)value}, parsedFormula: {parsedFormula}, equals: {equals}", 1);
+                            }
                         }
                         else if(value is DateTime)
                         {
@@ -280,11 +335,17 @@ namespace ANTLR_Test.Classes
                         
                         Logger.DebugLine($"FormulaText: {formulaText}", 1);
 
-                        convertedText += $"C[{j}|{i}] = ({formulaText})\n";
+                        convertedText += $"C[{j}|{i}] = {{{formulaText}}}\n";
 
                     }
                 }
             }
+        }
+
+        private bool IsDoubleEqual(double double1, double double2)
+        {
+            double difference = double1 - double2;
+            return Math.Abs(difference) < 0.001;
         }
 
         private bool compareDatesWithLeway(DateTime value, DateTime date, int daysLeway)

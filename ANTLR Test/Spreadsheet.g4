@@ -30,6 +30,7 @@ exp
 	| left=exp '%' right=exp										#modExp
 	| left=exp '+' right=exp										#addExp
 	| left=exp '-' right=exp										#subExp				
+	| left=exp '&' right=exp										#concatExp
 	| left=exp '<' right=exp										#smallerExp
 	| left=exp '>' right=exp										#greaterExp
 	| left=exp '<=' right=exp										#smallerEqExp
@@ -44,11 +45,16 @@ exp
 fexp
 	: 'IF' threeArg													#ifFunc
 	| 'ISBLANK' oneArg												#isblankFunc
+	| 'ISNA' oneArg													#isnaFunc
 	| 'SUM' anyArg													#sumFunc
 	| 'PROD' anyArg													#prodFunc
+	| 'AND' anyArg													#andFunc
+	| 'OR' anyArg													#orFunc
 	| 'AVERAGE' anyArg												#averageFunc
 	| 'MAX' anyArg													#maxFunc
 	| 'MIN' anyArg													#minFunc
+	| 'ROUNDUP' twoArg												#roundupFunc
+	| 'N' oneArg													#nFunc
 	;
 
 oneArg
@@ -75,7 +81,6 @@ aexp
 
 type
 	: 'bool'														#boolTp
-	| 'char'														#charTp
 	| 'int'															#intTp
 	| 'decimal'														#decimalTp
 	| 'string'														#stringTp
@@ -86,7 +91,6 @@ type
 value
 	: 'true'														#trueVal
 	| 'false'														#falseVal
-	| CHAR															#charVal
 	| INT															#intVal
 	| DECIMAL														#decimalVal
 	| EMPTY															#emptyVal
@@ -122,10 +126,6 @@ COMMENT
 
 EMPTY
 	: '\\'
-	;
-
-CHAR
-	: [a-zA-Z]
 	;
 
 IDENT
