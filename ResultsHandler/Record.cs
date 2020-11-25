@@ -58,28 +58,37 @@ namespace ResultsHandler
         {
             long typecheckTime = 0;
             long importTime = 0;
-            long totalTime = 0;
-            double importPercent = 0.0;
+            long fileSize = 0;
+            long cells = 0;
+            long formulas = 0;
+            long errors = 0;
+            long errorInvocations = 0;
             foreach(var record in records)
             {
                 typecheckTime += record.TypecheckTime;
                 importTime += record.ImportTime;
-                totalTime += record.TotalTime;
-                importPercent += record.ImportTimePercent;
+                fileSize += record.Filesize;
+                cells += record.Cells;
+                formulas += record.Formulas;
+                errors += record.Errors;
+                errorInvocations += record.ErrorInvocations;
             }
             typecheckTime /= records.Count;
             importTime /= records.Count;
-            totalTime /= records.Count;
-            importPercent /= records.Count;
+            fileSize /= records.Count;
+            cells /= records.Count;
+            formulas /= records.Count;
+            errors /= records.Count;
+            errorInvocations /= records.Count;
 
             Record result = new Record
             {
                 Name = records.FirstOrDefault().Name,
-                Filesize = records.FirstOrDefault().Filesize,
-                Cells = records.FirstOrDefault().Cells,
-                Formulas = records.FirstOrDefault().Formulas,
-                Errors = records.FirstOrDefault().Errors,
-                ErrorInvocations = records.FirstOrDefault().ErrorInvocations,
+                Filesize = fileSize,
+                Cells = cells,
+                Formulas = formulas,
+                Errors = errors,
+                ErrorInvocations = errorInvocations,
                 TypecheckTime = typecheckTime,
                 ImportTime = importTime,
             };

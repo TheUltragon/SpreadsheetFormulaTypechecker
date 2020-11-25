@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.1231
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpreadsheetFormulaTypeChecking", "SpreadsheetFormulaTypeChecking.csproj", "{A7700AF6-A6ED-446E-975A-FE9A5B0BD7EC}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResultsHandler", "..\ResultsHandler\ResultsHandler.csproj", "{7B832DA3-298F-4513-BB63-A7F6ECD02EA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpreadsheetFormulaTypechecker", "..\SpreadsheetFormulaTypechecker\SpreadsheetFormulaTypechecker.csproj", "{6394762E-8933-4221-8C33-B03FC7D00F13}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A7700AF6-A6ED-446E-975A-FE9A5B0BD7EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A7700AF6-A6ED-446E-975A-FE9A5B0BD7EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A7700AF6-A6ED-446E-975A-FE9A5B0BD7EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A7700AF6-A6ED-446E-975A-FE9A5B0BD7EC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7B832DA3-298F-4513-BB63-A7F6ECD02EA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7B832DA3-298F-4513-BB63-A7F6ECD02EA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B832DA3-298F-4513-BB63-A7F6ECD02EA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B832DA3-298F-4513-BB63-A7F6ECD02EA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6394762E-8933-4221-8C33-B03FC7D00F13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6394762E-8933-4221-8C33-B03FC7D00F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6394762E-8933-4221-8C33-B03FC7D00F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6394762E-8933-4221-8C33-B03FC7D00F13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

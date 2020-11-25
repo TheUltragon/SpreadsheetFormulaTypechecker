@@ -60,26 +60,71 @@ namespace ResultsHandler
             Console.WriteLine($"Comma Name Records: {commaNameRecords}");
 
             FinalRecords = OrderedRecords.Where(t => t.Value.IsAcceptable()).Select(t => t.Value).ToList();
-            Console.WriteLine($"Averae ImportPercent: {CalcImportPercentAverage(FinalRecords)}");
-            string output = $"{Record.CSVHeader()}\n";
-            foreach(var record in FinalRecords)
-            {
-                output += $"{record.ToCSVString()}\n";
-            }
-            Directory.CreateDirectory(ResultsOutputPath);
-            File.WriteAllText(Path.Combine(ResultsOutputPath, "output.csv"), output);
+
+            Dictionary<long, List<Record>> LogRecords = OrderRecordsInLogFormat(FinalRecords);
+            List<Record> averagedLogRecords = LogRecords.Select(t => Record.combineRecords(t.Value)).ToList();
+
+            WriteRecordsToFile(FinalRecords, "output.csv");
+            WriteRecordsToFile(averagedLogRecords, "logOutput.csv");
 
             Console.ReadLine();
         }
 
+        private static void WriteRecordsToFile(List<Record> records, string file)
+        {
+            string output = $"{Record.CSVHeader()}\n";
+            foreach (var record in records)
+            {
+                output += $"{record.ToCSVString()}\n";
+            }
+            Directory.CreateDirectory(ResultsOutputPath);
+            File.WriteAllText(Path.Combine(ResultsOutputPath, file), output);
+        }
+
+        private static Dictionary<long, List<Record>> OrderRecordsInLogFormat(List<Record> finalRecords)
+        {
+            Dictionary<long, List<Record>> result = new Dictionary<long, List<Record>>();
+            //Initialize Result Dictionary
+            for (int i = 1; i < 6; i++)
+            {
+                for (int j = 1; j < 10; j++)
+                {
+                    result.Add((long)Math.Pow(j,i), new List<Record>());
+                }
+            }
+            //Go through each Record and put it into right spot of Dictionary
+            foreach(var record in finalRecords)
+            {
+                for(int i = 0; i < result.Count; i++)
+                {
+                    var entry = result.ElementAt(i);
+                    long max = entry.Key;
+                    Console.WriteLine($"Result Max: {max}");
+                    if(record.Formulas <= max)
+                    {
+                        Console.WriteLine($"Result Found: {record.Formulas}");
+                        entry.Value.Add(record);
+                        continue;
+                    }
+                }
+            }
+
+            return result;
+        }
+
         private static double CalcImportPercentAverage(List<Record> Records)
         {
+            double test = Records.Sum(t => t.ImportTimePercent) / Records.Count;
+            Console.WriteLine($"Test Average ImportPercent: {test}");
+
             double sum = 0.0;
             foreach(var rec in Records)
             {
                 sum += rec.ImportTimePercent;
             }
             return sum / Records.Count;
+
+
         }
 
        

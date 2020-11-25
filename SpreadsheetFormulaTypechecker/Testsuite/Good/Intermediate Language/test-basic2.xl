@@ -1,0 +1,5 @@
+C[1|1] = 2
+C[1|2] = \
+
+bool test = true
+C[2|1] = test
