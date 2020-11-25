@@ -12,6 +12,7 @@ namespace ANTLR_Test.Classes
     class ExcelFormulaVisitor : ExcelFormulaBaseVisitor<string>
     {
         private Tuple<int, int> lastAdress = new Tuple<int, int>(1,1);
+        public bool Error = false;
 
         //====================================================
         //Excel Expression Root
@@ -25,7 +26,8 @@ namespace ANTLR_Test.Classes
             }
             else
             {
-                return "Not an excel expression";
+                ThrowUnsupportedError();
+                return "";
             }
         }
 
@@ -188,13 +190,6 @@ namespace ANTLR_Test.Classes
 
 
 
-
-
-
-
-
-
-
         //====================================================
         //Cell Adress
         //====================================================
@@ -251,13 +246,19 @@ namespace ANTLR_Test.Classes
         public override string VisitSheetAdress([NotNull] ExcelFormulaParser.SheetAdressContext context)
         {
             //TODO: Implement reference to other sheet
-            Logger.DebugLine("Sheet Adress visited, not supported yet in typechecker!", 10);
+            Logger.DebugLine("Sheet Adress visited, not supported yet in typechecker!", 1);
+            ThrowUnsupportedError();
+            return "";
+        }
+
+        public void ThrowUnsupportedError()
+        {
+            Error = true;
             if (GlobalSettings.ImportStopAtUnsupportedError)
             {
-                Console.WriteLine($"Enter to continue");
+                Console.WriteLine($"Enter to continue", 10);
                 Console.ReadLine();
             }
-            return "";
         }
 
 
@@ -336,6 +337,12 @@ namespace ANTLR_Test.Classes
             return $"ROUNDUP{args}";
         }
 
+        public override string VisitRoundFunc([NotNull] ExcelFormulaParser.RoundFuncContext context)
+        {
+            var args = Visit(context.twoArg());
+            return $"ROUND{args}";
+        }
+
         public override string VisitNFunc([NotNull] ExcelFormulaParser.NFuncContext context)
         {
             var args = Visit(context.oneArg());
@@ -348,36 +355,24 @@ namespace ANTLR_Test.Classes
         public override string VisitSumifFunc([NotNull] ExcelFormulaParser.SumifFuncContext context)
         {
             //TODO: Implement reference to other sheet
-            Logger.DebugLine("SUMIF Function expression visited, not supported yet in typechecker!", 10);
-            if (GlobalSettings.ImportStopAtUnsupportedError)
-            {
-                Console.WriteLine($"Enter to continue");
-                Console.ReadLine();
-            }
+            Logger.DebugLine("SUMIF Function expression visited, not supported yet in typechecker!", 1);
+            ThrowUnsupportedError();
             return "";
         }
 
         public override string VisitVlookupFunc([NotNull] ExcelFormulaParser.VlookupFuncContext context)
         {
             //TODO: Implement reference to other sheet
-            Logger.DebugLine("VLOOKUP Function expression visited, not supported yet in typechecker!", 10);
-            if (GlobalSettings.ImportStopAtUnsupportedError)
-            {
-                Console.WriteLine($"Enter to continue");
-                Console.ReadLine();
-            }
+            Logger.DebugLine("VLOOKUP Function expression visited, not supported yet in typechecker!", 1);
+            ThrowUnsupportedError();
             return "";
         }
 
         public override string VisitNaFunc([NotNull] ExcelFormulaParser.NaFuncContext context)
         {
             //TODO: Implement reference to other sheet
-            Logger.DebugLine("NA Function expression visited, not supported yet in typechecker!", 10);
-            if (GlobalSettings.ImportStopAtUnsupportedError)
-            {
-                Console.WriteLine($"Enter to continue");
-                Console.ReadLine();
-            }
+            Logger.DebugLine("NA Function expression visited, not supported yet in typechecker!", 1);
+            ThrowUnsupportedError();
             return "";
         }
 
@@ -522,6 +517,7 @@ namespace ANTLR_Test.Classes
 
         public override string VisitErrorNode([NotNull] IErrorNode node)
         {
+            ThrowUnsupportedError();
             throw new Exception($"Error Node reached with text {node.GetText()}.");
         }
     }

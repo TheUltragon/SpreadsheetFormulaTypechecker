@@ -25,6 +25,7 @@ exp
 	| val=value														#valueExp
 	| IDENT															#varExp
 	| 'C[' left=aexp '|' right=aexp ']'								#cellExp
+	| '(' expr=exp ')'												#bracketExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
 	| left=exp '%' right=exp										#modExp
@@ -40,6 +41,8 @@ exp
 	| left=exp '&&' right=exp										#andExp
 	| left=exp '||' right=exp										#orExp
 	| '!' param=exp													#notExp
+	| '+' param=exp													#posExp
+	| '-' param=exp													#negExp
 	;
 
 fexp
@@ -54,6 +57,7 @@ fexp
 	| 'MAX' anyArg													#maxFunc
 	| 'MIN' anyArg													#minFunc
 	| 'ROUNDUP' twoArg												#roundupFunc
+	| 'ROUND' twoArg												#roundFunc
 	| 'N' oneArg													#nFunc
 	;
 

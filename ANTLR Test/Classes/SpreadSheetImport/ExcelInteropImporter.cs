@@ -34,7 +34,7 @@ namespace ANTLR_Test.Classes
                 Logger.DebugLine($"Exception Stacktrace: {e.StackTrace}", 1);
                 if (GlobalSettings.ImportStopAtMiscError)
                 {
-                    Console.WriteLine($"Enter to continue");
+                    Console.WriteLine($"Enter to continue", 10);
                     Console.ReadLine();
                 }
             }
@@ -64,7 +64,7 @@ namespace ANTLR_Test.Classes
                     Logger.DebugLine($"Exception Stacktrace: {e.StackTrace}", 1);
                     if (GlobalSettings.ImportStopAtMiscError)
                     {
-                        Console.WriteLine($"Enter to continue");
+                        Console.WriteLine($"Enter to continue", 10);
                         Console.ReadLine();
                     }
                     continue;
@@ -188,6 +188,10 @@ namespace ANTLR_Test.Classes
             {
                 convertedText += ((DateTime)value).ToString("yyyy-MM-ddTHH:mm:ss");
             }
+            else if(value is double)
+            {
+                convertedText += ((double)value).ToString("G", CultureInfo.InvariantCulture);
+            }
             else
             {
                 convertedText += value.ToString();
@@ -203,7 +207,7 @@ namespace ANTLR_Test.Classes
             var xF = formulaArray.GetLength(0);
             var yF = formulaArray.GetLength(1);
 
-            if(x != xF || y != yF)
+            if (x != xF || y != yF)
             {
                 Logger.DebugLine("Compare Arrays: x and y dimensions dont match between arrays", 1);
                 Logger.DebugLine($"x: {x}, xF: {xF}, y: {y}, yF: {yF}", 1);
@@ -272,13 +276,19 @@ namespace ANTLR_Test.Classes
                             {
                                 DateTime date = new DateTime(1900, 1, 1).AddDays(result);
                                 equals = true;
-                                Logger.DebugLine($"Formula is int, date: {date.ToString()}, value date: {(DateTime)value}", 10);
+                                Logger.DebugLine($"Formula is int, date: {date.ToString()}, value date: {(DateTime)value}", 1);
                             }
                             else if(DateTime.TryParse((string)formula, out DateTime resultDate))
                             {
                                 equals = true;
                                 Logger.DebugLine($"Formula is datetime, resultDate: {resultDate.ToString()}, value date: {(DateTime)value}", 1);
 
+                            }
+                            else if(double.TryParse((string)formula, out double resultDouble))
+                            {
+                                equals = true;
+                                //DateTime date = new DateTime(1900, 1, 1).AddDays(resultDouble);
+                                Logger.DebugLine($"Formula is double, resultDouble: {resultDouble.ToString()}, value date: {(DateTime)value}", 1);
                             }
                             else
                             {
@@ -314,25 +324,42 @@ namespace ANTLR_Test.Classes
                         Logger.DebugLine("");
                         Logger.DebugLine($"{j}, {i}: Value does not equal Formula", 1);
 
+                        SyntaxErrorListener errorListener = new SyntaxErrorListener();
                         AntlrInputStream inputStream = new AntlrInputStream((string)formula);
                         ExcelFormulaLexer spreadsheetLexer = new ExcelFormulaLexer(inputStream);
+                        spreadsheetLexer.RemoveErrorListeners();
+                        spreadsheetLexer.AddErrorListener(errorListener);
                         CommonTokenStream commonTokenStream = new CommonTokenStream(spreadsheetLexer);
                         ExcelFormulaParser excelFormulaParser = new ExcelFormulaParser(commonTokenStream);
 
                         ExcelFormulaParser.ExcelExprContext context = excelFormulaParser.excelExpr();
-                        if (excelFormulaParser.NumberOfSyntaxErrors > 0)
+                        if (errorListener.HasError)
                         {
-                            Logger.DebugLine($"Found Syntax Error - Dont processing formula at {i}, {j} : {(string)formula}", 10);
+                            Logger.DebugLine($"Found Lexer Error - Dont process formula at {i}, {j} : {(string)formula}", 5);
                             if (GlobalSettings.ImportStopAtSyntaxError)
                             {
-                                Console.WriteLine($"Enter to continue");
+                                Console.WriteLine($"Lexer Error - Enter to continue", 10);
+                                Console.ReadLine();
+                            }
+                            continue;
+                        }
+                        if (excelFormulaParser.NumberOfSyntaxErrors > 0)
+                        {
+                            Logger.DebugLine($"Found Syntax Error - Dont process formula at {i}, {j} : {(string)formula}", 5);
+                            if (GlobalSettings.ImportStopAtSyntaxError)
+                            {
+                                Console.WriteLine($"Syntax Error - Enter to continue", 10);
                                 Console.ReadLine();
                             }
                             continue;
                         }
                         ExcelFormulaVisitor visitor = new ExcelFormulaVisitor();
                         string formulaText = visitor.Visit(context);
-                        
+
+                        if (visitor.Error)
+                        {
+                            continue;
+                        }
                         Logger.DebugLine($"FormulaText: {formulaText}", 1);
 
                         convertedText += $"C[{j}|{i}] = {{{formulaText}}}\n";

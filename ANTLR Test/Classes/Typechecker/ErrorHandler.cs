@@ -12,6 +12,8 @@ namespace ANTLR_Test.Classes
     {
         public List<Tuple<ErrorType, string>> IgnoredErrors;
         public List<Tuple<ErrorType, string>> UnIgnoredErrors;
+        public int ErrorInvocations;
+        public int Errors;
 
         public ErrorHandlerData()
         {
@@ -45,7 +47,7 @@ namespace ANTLR_Test.Classes
     public class ErrorHandler
     {
         public ErrorHandlerData data;
-        private string path => "Data/ErrorHandler.json";
+        private string path => "Persistent/ErrorHandler.json";
         public void Load()
         {
             using(StreamReader reader = File.OpenText(path))
@@ -68,34 +70,52 @@ namespace ANTLR_Test.Classes
         public ErrorHandler()
         {
             Load();
+            Reset();
+        }
+        public void Reset()
+        {
+            data.ErrorInvocations = 0;
+            data.Errors = 0;
         }
 
         //Returns, wether the error really was an error (false) or wether it was ignored (true)
-        public bool ThrowError(int line, int column, bool ignoreable, ErrorType type, string specifier, string payload)
+        public bool ThrowError(int line, int column, bool ignoreable, ErrorType type, string specifier, string payload, Types combinedTypes)
         {
-            Logger.DebugLine($"", 10);
+            data.ErrorInvocations++;
+            if (null != combinedTypes && (combinedTypes.HasType(VarType.RuntimeError) || combinedTypes.HasType(VarType.TypeError)))
+            {
+                Logger.DebugLine("Error has Type RuntimeError or TypeError as cause, skipping", 4);
+                return false;
+            }
+            Logger.DebugLine($"", 5);
             //Check, wether this error should be ignored
             if (ignoreable && !CheckIfErrorToBeThrown(type, specifier)){
                 //Check if ignored errors should be reported
                 if(GlobalSettings.LogIgnoredErrors)
                 {
-                    Logger.DebugLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}", 10);
+                    Logger.DebugLine($"Ignored Error at {line},{column} of type {type} and specifier {specifier}: {payload}", 5);
                 }
                 return true;
             }
 
-            Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 10);
             //Check, wether unspecified errors should be ignore checked
             if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && GlobalSettings.CheckIgnoreForUnspecifiedErrors)
             {
+                Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 10);
                 bool result = checkIgnoreForUnspecifiedError(type, specifier);
-                if (result)
+                Save();
+                if (!result)
                 {
-                    Save();
+                    data.Errors++;
                 }
                 return result;
             }
+            else
+            {
+                Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 5);
+            }
 
+            data.Errors++;
             return false;
         }
 

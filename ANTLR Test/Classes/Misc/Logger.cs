@@ -45,6 +45,10 @@ namespace ANTLR_Test.Classes
                     if (!string.IsNullOrEmpty(OutputFilePath))
                     {
                         Output += text;
+                        if (GlobalSettings.LoggerInstantOut)
+                        {
+                            SaveToFile();
+                        }
                     }
                 }
             }

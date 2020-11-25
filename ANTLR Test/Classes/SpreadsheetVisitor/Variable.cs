@@ -51,7 +51,7 @@ namespace ANTLR_Test.Classes
             {
                 return HasType(VarType.Int) && HasType(VarType.Decimal);
             }
-            else if(.Count == 1)
+            else if(Count == 1)
             {
                 return HasType(VarType.Int) || HasType(VarType.Decimal);
             }
@@ -90,10 +90,71 @@ namespace ANTLR_Test.Classes
             }
         }
 
+        public static Types ImplicitConversion(Types a, Types b)
+        {
+            if(a.AllNumeric() && b.AllNumeric())
+            {
+                return GetHighestNumericType(a, b);
+            }
+            else if (a.OnlyHasType(VarType.Empty))
+            {
+                return b;
+            }
+            else if (b.OnlyHasType(VarType.Empty))
+            {
+                return a;
+            }
+            else if (b.HasUndefined())
+            {
+                return b;
+            }
+            else if (a.HasUndefined())
+            {
+                return a;
+            }
+            return a;
+        }
+
+        //Assumes both Types only have Numeric Types into them
+        public static Types GetHighestNumericType(Types left, Types right)
+        {
+            if(!left.AllNumeric() || !right.AllNumeric())
+            {
+                throw new Exception("Not all numeric for Types.GetHighestNumericType!");
+            }
+
+            if(left.HasType(VarType.Decimal) || right.HasType(VarType.Decimal))
+            {
+                return new Types(VarType.Decimal);
+            }
+            else
+            {
+                return new Types(VarType.Int);
+            }
+        }
+
+
+        public bool HasUndefined()
+        {
+            return types.Count == 0 ||
+                   types.Contains(VarType.Empty) || 
+                   types.Contains(VarType.None) || 
+                   types.Contains(VarType.Unknown) || 
+                   types.Contains(VarType.RuntimeError) || 
+                   types.Contains(VarType.TypeError);
+        }
+
         public Types Combine(Types otherType)
         {
             Types newTypes = Copy();
             newTypes.AddTypes(otherType);
+            return newTypes;
+        }
+
+        public static Types Combine(Types a, Types b)
+        {
+            Types newTypes = a.Copy();
+            newTypes.AddTypes(b);
             return newTypes;
         }
 
@@ -126,10 +187,58 @@ namespace ANTLR_Test.Classes
             AddType(tp);
         }
 
+
+        public static bool operator ==(Types a, Types b)
+        {
+            if(ReferenceEquals(a, b))
+            {
+                return true;
+            }
+            else if (ReferenceEquals(a, null))
+            {
+                return false;
+            }
+            else if(ReferenceEquals(b, null)){
+                return false;
+            }
+
+            return a.Equals(b);
+        }
+
+        public static bool operator !=(Types a, Types b)
+        {
+            return !(a == b);
+        }
+
+        public bool Equals(Types obj)
+        {
+            if (ReferenceEquals(obj, null))
+            {
+                return false;
+            }
+            else if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+            return this.types.SetEquals(obj.types);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.Equals(obj as Types);
+        }
+
         public override string ToString()
         {
+            if(Count == 0)
+            {
+                Logger.DebugLine("Count == 0");
+                return "--Nothing--"; 
+            }
             if(Count == 1)
             {
+                var result = First.ToString();
+                Logger.DebugLine("Count == 1 - Result: " + result, 1);
                 return First.ToString();
             }
             else
@@ -138,15 +247,18 @@ namespace ANTLR_Test.Classes
                 bool first = true;
                 foreach(VarType tp in types)
                 {
+                    Logger.Debug("I");
                     if (first)
                     {
                         tps = tp.ToString();
+                        first = false;
                     }
                     else
                     {
                         tps += "," + tp.ToString();
                     }
                 }
+                Logger.DebugLine("Count > 1 - tps: " + tps, 1);
                 return tps;
             }
         }

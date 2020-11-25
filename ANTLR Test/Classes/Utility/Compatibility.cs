@@ -9,13 +9,13 @@ namespace ANTLR_Test.Classes
     //External class instead of part of VarTypeExtensions, because symbolic for compatibility operators in Inference Rules 
     public static class Compatibility
     {
-        public static bool IsCompatible(VarType type1, VarType type2)
+        public static bool IsCompatible(Types type1, Types type2)
         {
             if (type1 == type2)
             {
                 return true;
             }
-            else if (type1.IsNumeric() && type2.IsNumeric())
+            else if (type1.AllNumeric() && type2.AllNumeric())
             {
                 return true;
             }
@@ -25,11 +25,11 @@ namespace ANTLR_Test.Classes
             }
         }
 
-        public static VarType GetHigherType(VarType type1, VarType type2)
+        public static Types GetHigherType(Types type1, Types type2)
         {
-            if (type1.IsNumeric() && type2.IsNumeric())
+            if (type1.AllNumeric() && type2.AllNumeric())
             {
-                return VarTypeExtensions.GetHighestNumericType(type1, type2);
+                return Types.ImplicitConversion(type1, type2);
             }
             else
             {

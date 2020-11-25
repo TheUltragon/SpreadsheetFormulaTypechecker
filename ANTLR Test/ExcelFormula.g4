@@ -45,6 +45,7 @@ fexp
 	| 'MAX' anyArg													#maxFunc
 	| 'MIN' anyArg													#minFunc
 	| 'ROUNDUP' twoArg												#roundupFunc
+	| 'ROUND' twoArg												#roundFunc
 	| 'N' oneArg													#nFunc
 	
 	//Not Supported Functions

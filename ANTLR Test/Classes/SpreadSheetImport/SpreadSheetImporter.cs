@@ -32,7 +32,7 @@ namespace ANTLR_Test.Classes
                     Logger.DebugLine($"Going to import file {file}",10);
                     if (GlobalSettings.ImportStopAtNextFile)
                     {
-                        Console.WriteLine($"Enter to continue");
+                        Console.WriteLine($"Enter to continue", 10);
                         Console.ReadLine();
                     }
                        

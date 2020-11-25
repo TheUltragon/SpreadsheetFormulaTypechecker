@@ -57,15 +57,15 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            return $"ErrorNode: {ErrorText}";
+            return $"Error: {ErrorText}";
         }
     }
 
     public class AbstractTypeNode : AbstractFormulaNode
     {
-        public VarType Type;
+        public Types Type;
 
-        public AbstractTypeNode(AbstractFormula formula, VarType type) : base(formula)
+        public AbstractTypeNode(AbstractFormula formula, Types type) : base(formula)
         {
             Type = type;
         }
@@ -77,7 +77,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            return $"TypeNode: {Type.ToString()}";
+            return $"{Type.ToString()}";
         }
     }
 
@@ -97,7 +97,7 @@ namespace ANTLR_Test.Classes
         public override AbstractFormulaNode Simplify()
         {
             var cellType = ParentFormula.Visitor.Repository.GetCurrentCellType(getThisCellIndex());
-            if(cellType != VarType.Empty && cellType != VarType.Unknown && cellType != VarType.None)
+            if(!cellType.HasUndefined())
             {
                 return new AbstractTypeNode(ParentFormula, cellType);
             }
@@ -109,7 +109,17 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            return $"CellNode: Index: {CellIndex.ToString()}, LeftRelative: {IsLeftRelative}, RightRelative: {IsRightRelative}";
+            string left = CellIndex.Item1.ToString();
+            if(IsLeftRelative && CellIndex.Item1 >= 0)
+            {
+                left = "+" + left;
+            }
+            string right = CellIndex.Item2.ToString();
+            if (IsRightRelative && CellIndex.Item2 >= 0)
+            {
+                right = "+" + right;
+            }
+            return $"C[{left}|{right}]";
         }
 
         public Tuple<int, int> getThisCellIndex()
@@ -149,8 +159,8 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
                     return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
@@ -162,7 +172,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"AddNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} + {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -183,8 +193,8 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
                     return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
@@ -196,7 +206,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"SubNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} - {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -218,8 +228,8 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
                     return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
@@ -231,7 +241,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"MultNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} * {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -252,11 +262,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                if (tp1.IsNumeric() && tp2.IsNumeric())
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1.AllNumeric() && tp2.AllNumeric())
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Decimal);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Decimal));
                 }
                 else if (Compatibility.IsCompatible(tp1, tp2))
                 {
@@ -270,7 +280,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"DivNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} / {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -292,8 +302,8 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
                     return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp1, tp2));
@@ -305,10 +315,45 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"ModNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} % {Children.Item2.ToString()}";
             return result;
         }
     }
+
+    public class AbstractConcatNode : AbstractOperatorNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractConcatNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1 == tp2 && tp1.OnlyHasType(VarType.String))
+                {
+                    return new AbstractTypeNode(ParentFormula, tp1);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"{Children.Item1.ToString()} & {Children.Item2.ToString()}";
+            return result;
+        }
+    }
+
 
 
     public class AbstractSmallerNode : AbstractOperatorNode
@@ -327,11 +372,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -340,7 +385,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"SmallerNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} < {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -361,11 +406,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -374,7 +419,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"GreaterNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} > {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -395,11 +440,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -408,7 +453,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"GreaterEqNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} >= {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -429,11 +474,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -442,7 +487,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"SmallerEqNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} <= {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -464,11 +509,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -477,7 +522,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"EqualNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} == {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -498,11 +543,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
                 if (Compatibility.IsCompatible(tp1, tp2))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -511,7 +556,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"UnequalNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} != {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -532,11 +577,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                if (tp1 == tp2 && tp1 == VarType.Bool)
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1 == tp2 && tp1.OnlyHasType(VarType.Bool))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -545,7 +590,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"AndNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} && {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -566,11 +611,11 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                if (tp1 == tp2 && tp1 == VarType.Bool)
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1 == tp2 && tp1.OnlyHasType(VarType.Bool))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
                 }
             }
 
@@ -579,7 +624,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"OrNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"{Children.Item1.ToString()} || {Children.Item2.ToString()}";
             return result;
         }
     }
@@ -600,10 +645,10 @@ namespace ANTLR_Test.Classes
             Child = child;
             if (Child is AbstractTypeNode)
             {
-                VarType tp = ((AbstractTypeNode)Child).Type;
-                if (tp == VarType.Bool)
+                Types tp = ((AbstractTypeNode)Child).Type;
+                if (tp.OnlyHasType(VarType.Bool))
                 {
-                    return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                    return new AbstractTypeNode(ParentFormula, tp);
                 }
             }
 
@@ -612,7 +657,71 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"NotNode: Child: {Child.ToString()}";
+            string result = $"!{Child.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractNegNode : AbstractOperatorNode
+    {
+        public AbstractFormulaNode Child;
+
+        public AbstractNegNode(AbstractFormula formula, AbstractFormulaNode child) : base(formula)
+        {
+            Child = child;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child = Child.Simplify();
+            Child = child;
+            if (Child is AbstractTypeNode)
+            {
+                Types tp = ((AbstractTypeNode)Child).Type;
+                if (tp.AllNumeric())
+                {
+                    return new AbstractTypeNode(ParentFormula, tp);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"-{Child.ToString()}";
+            return result;
+        }
+    }
+
+    public class AbstractPosNode : AbstractOperatorNode
+    {
+        public AbstractFormulaNode Child;
+
+        public AbstractPosNode(AbstractFormula formula, AbstractFormulaNode child) : base(formula)
+        {
+            Child = child;
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child = Child.Simplify();
+            Child = child;
+            if (Child is AbstractTypeNode)
+            {
+                Types tp = ((AbstractTypeNode)Child).Type;
+                if (tp.AllNumeric())
+                {
+                    return new AbstractTypeNode(ParentFormula, tp);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"+{Child.ToString()}";
             return result;
         }
     }
@@ -643,7 +752,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
+            Types highestType = new Types(VarType.Int);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -657,7 +766,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify Product Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify Product Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -681,8 +790,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "ProdFuncNode: Children: ";
-            result += ListNodesToString(Children);
+            string result = "PROD(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -700,7 +808,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
+            Types highestType = new Types(VarType.Int);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -714,7 +822,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify Sum Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify Sum Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -738,9 +846,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "SumFuncNode: Children: ";
-            result += ListNodesToString(Children);
-
+            string result = "SUM(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -759,7 +865,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Bool;
+            Types highestType = new Types(VarType.Bool);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -773,7 +879,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify And Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify And Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -797,9 +903,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "AndFuncNode: Children: ";
-            result += ListNodesToString(Children);
-
+            string result = "AND(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -818,7 +922,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
+            Types highestType = new Types(VarType.Int);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -832,7 +936,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify Or Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify Or Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -856,9 +960,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "OrFuncNode: Children: ";
-            result += ListNodesToString(Children);
-
+            string result = "OR(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -878,7 +980,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
+            Types highestType = new Types(VarType.Int);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -892,7 +994,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify Average Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify Average Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -916,9 +1018,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "AverageFuncNode: Children: ";
-            result += ListNodesToString(Children);
-
+            string result = "AVERAGE(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -936,7 +1036,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
+            Types highestType = new Types(VarType.Int);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -950,7 +1050,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify Max Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify Max Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -974,9 +1074,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "MaxFuncNode: Children: ";
-            result += ListNodesToString(Children);
-
+            string result = "MAX(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -997,7 +1095,7 @@ namespace ANTLR_Test.Classes
         {
             List<AbstractFormulaNode> newChildren = new List<AbstractFormulaNode>();
             bool simplifySuccess = true;
-            VarType highestType = VarType.Int;
+            Types highestType = new Types(VarType.Int);
             foreach (var child in Children)
             {
                 var newChild = child.Simplify();
@@ -1011,7 +1109,7 @@ namespace ANTLR_Test.Classes
                     }
                     else
                     {
-                        Logger.DebugLine("Typecheck Error on Simplify Min Function - Type " + tp.ToString(), 10);
+                        Logger.DebugLine("Typecheck Error on Simplify Min Function - Type " + tp.ToString(), 1);
                         simplifySuccess = false;
                     }
                 }
@@ -1035,9 +1133,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = "MinFuncNode: Children: ";
-            result += ListNodesToString(Children);
-
+            string result = "MIN(" + ListNodesToString(Children) + ")";
             return result;
         }
     }
@@ -1058,9 +1154,9 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                if (tp1.IsNumeric() && tp2 == VarType.Int)
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1.AllNumeric() && tp2.OnlyHasType(VarType.Int))
                 {
                     return new AbstractTypeNode(ParentFormula, tp1);
                 }
@@ -1071,7 +1167,41 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"RoundupFuncNode: Children: {Children.Item1.ToString()}, {Children.Item2.ToString()}";
+            string result = $"ROUNDUP({Children.Item1.ToString()}, {Children.Item2.ToString()})";
+            return result;
+        }
+    }
+
+    public class AbstractRoundFuncNode : AbstractFunctionNode
+    {
+        public Tuple<AbstractFormulaNode, AbstractFormulaNode> Children;
+
+        public AbstractRoundFuncNode(AbstractFormula formula, AbstractFormulaNode child1, AbstractFormulaNode child2) : base(formula)
+        {
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+        }
+
+        public override AbstractFormulaNode Simplify()
+        {
+            var child1 = Children.Item1.Simplify();
+            var child2 = Children.Item2.Simplify();
+            Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode>(child1, child2);
+            if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode)
+            {
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                if (tp1.AllNumeric() && tp2.OnlyHasType(VarType.Int))
+                {
+                    return new AbstractTypeNode(ParentFormula, tp1);
+                }
+            }
+
+            return this;
+        }
+
+        public override string ToString()
+        {
+            string result = $"ROUND({Children.Item1.ToString()}, {Children.Item2.ToString()})";
             return result;
         }
     }
@@ -1094,10 +1224,10 @@ namespace ANTLR_Test.Classes
             Children = new Tuple<AbstractFormulaNode, AbstractFormulaNode, AbstractFormulaNode>(child1, child2, child3);
             if (Children.Item1 is AbstractTypeNode && Children.Item2 is AbstractTypeNode && Children.Item3 is AbstractTypeNode)
             {
-                VarType tp1 = ((AbstractTypeNode)Children.Item1).Type;
-                VarType tp2 = ((AbstractTypeNode)Children.Item2).Type;
-                VarType tp3 = ((AbstractTypeNode)Children.Item3).Type;
-                if (tp1 == VarType.Bool && Compatibility.IsCompatible(tp2, tp3))
+                Types tp1 = ((AbstractTypeNode)Children.Item1).Type;
+                Types tp2 = ((AbstractTypeNode)Children.Item2).Type;
+                Types tp3 = ((AbstractTypeNode)Children.Item3).Type;
+                if (tp1.OnlyHasType(VarType.Bool) && Compatibility.IsCompatible(tp2, tp3))
                 {
                     return new AbstractTypeNode(ParentFormula, Compatibility.GetHigherType(tp2, tp3));
                 }
@@ -1108,7 +1238,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"IfFuncNode: Children: If: {Children.Item1.ToString()}, Then: {Children.Item2.ToString()} Else: {Children.Item3.ToString()}";
+            string result = $"IF({Children.Item1.ToString()}, {Children.Item2.ToString()}, {Children.Item3.ToString()})";
             return result;
         }
     }
@@ -1129,7 +1259,7 @@ namespace ANTLR_Test.Classes
             Child = child;
             if (!(Child is AbstractErrorNode))
             {
-                return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
             }
 
             return this;
@@ -1137,7 +1267,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"IsblankFuncNode: Child: {Child.ToString()}";
+            string result = $"ISBLANK({Child.ToString()})";
             return result;
         }
     }
@@ -1158,7 +1288,7 @@ namespace ANTLR_Test.Classes
             Child = child;
             if (!(Child is AbstractErrorNode))
             {
-                return new AbstractTypeNode(ParentFormula, VarType.Bool);
+                return new AbstractTypeNode(ParentFormula, new Types(VarType.Bool));
             }
 
             return this;
@@ -1166,7 +1296,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"IsnaFuncNode: Child: {Child.ToString()}";
+            string result = $"ISNA({Child.ToString()})";
             return result;
         }
     }
@@ -1187,10 +1317,10 @@ namespace ANTLR_Test.Classes
             if (Child is AbstractTypeNode)
             {
                 AbstractTypeNode typeNode = (AbstractTypeNode)Child;
-                if(typeNode.Type == VarType.TypeError || typeNode.Type.IsNumeric()){
+                if(typeNode.Type.OnlyHasType(VarType.TypeError) || typeNode.Type.AllNumeric()){
                     return typeNode;
                 }
-                return new AbstractTypeNode(ParentFormula, VarType.Int);
+                return new AbstractTypeNode(ParentFormula, new Types(VarType.Int));
             }
 
             return this;
@@ -1198,7 +1328,7 @@ namespace ANTLR_Test.Classes
 
         public override string ToString()
         {
-            string result = $"NFuncNode: Child: {Child.ToString()}";
+            string result = $"N({Child.ToString()})";
             return result;
         }
     }

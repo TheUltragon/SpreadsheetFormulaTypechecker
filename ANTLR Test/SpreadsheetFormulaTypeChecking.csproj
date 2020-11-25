@@ -90,7 +90,8 @@
     <Compile Include="Classes\Utility\Compatibility.cs" />
     <Compile Include="Classes\SpreadsheetVisitor\DataRepository.cs" />
     <Compile Include="Classes\Typechecker\ErrorHandler.cs" />
-    <Compile Include="Classes\Misc\ReflectiveEnumerator.cs" />
+    <Compile Include="Classes\Utility\Extensions.cs" />
+    <Compile Include="Classes\Utility\ReflectiveEnumerator.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelFormulaVisitor.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelInteropImporter.cs" />
     <Compile Include="Classes\SpreadSheetImport\ExcelReaderImporter.cs" />
@@ -123,7 +124,37 @@
     <None Include="Data\Corpus\BKUP\posey_Q1.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Handmade Examples\Handmade Example 1.xlsx">
+    <None Include="Data\Handmade Examples\Backup\1999RISEAnnualReport%284%29.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\ACT3_sec23_smith.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\act3_lab23_posey.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\Handmade Example 1.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\Komma Decimals.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\_h8d62ck10a9im6rrddli#A7DD7.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\doj53forfy04web.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\rise01_extracted.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\Fin_plan_sel_def.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\bil101e_yoklama_listesi.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\FY02-03_GOVT_FUNDS.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
@@ -131,6 +162,9 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
+    <None Include="Testsuite\Bad\AAA Recursion\Recursion.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Testsuite\Bad\Intermediate Language\test-bad1.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -138,6 +172,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Testsuite\Good\AAA\test-all.xl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Testsuite\Good\AAA\test-prod.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Testsuite\Good\Abstract Formulas\test-assign.xl">
@@ -178,7 +215,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data\ErrorHandler.json">
+    <None Include="Persistent\ErrorHandler.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -222,7 +259,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Data\Handmade Examples\Problematic\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

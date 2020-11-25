@@ -18,7 +18,7 @@ namespace ANTLR_Test.Classes
     public static class GlobalSettings
     {
         public static bool ImportStopAtMiscError = false;
-        public static bool ImportStopAtSyntaxError = true;
+        public static bool ImportStopAtSyntaxError = false;
         public static bool ImportStopAtUnsupportedError = false;
         public static bool ImportStopAtNextFile = false;
         public static bool TypecheckerStopAtNextFile = false;
@@ -27,6 +27,10 @@ namespace ANTLR_Test.Classes
         public static TypecheckErrorAnswer ErrorHandlerDefaultAnswer = TypecheckErrorAnswer.DoNothing;
         public static bool LogIgnoredErrors = false;
         public static bool CheckIgnoreForUnspecifiedErrors = true;
+
+        public static bool LoggerInstantOut = true;
+
+        public static bool ResetTestrunCounter = false;
 
         public static string ConvertErrorAnswerToInput(TypecheckErrorAnswer answer)
         {

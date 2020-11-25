@@ -272,6 +272,26 @@ namespace ANTLR_Test.Classes
         }
     }
 
+    public class AbstractConcatFormula : AbstractFormula
+    {
+        public override Type ExpressionType => typeof(SpreadsheetParser.ConcatExpContext);
+
+        public override bool Translate()
+        {
+            var addExp = (SpreadsheetParser.ConcatExpContext)Exp;
+            var leftFormula = Formulas.TranslateFormula(addExp.left, CellIndex, out bool successLeft);
+            var rightFormula = Formulas.TranslateFormula(addExp.right, CellIndex, out bool successRight);
+            if (successLeft && successRight)
+            {
+                Node = new AbstractConcatNode(this, leftFormula.Node, rightFormula.Node);
+                return true;
+            }
+            return false;
+        }
+    }
+
+
+
     public class AbstractSmallerFormula : AbstractFormula
     {
         public override Type ExpressionType => typeof(SpreadsheetParser.SmallerExpContext);
@@ -415,6 +435,40 @@ namespace ANTLR_Test.Classes
         }
     }
 
+    public class AbstractNegFormula : AbstractFormula
+    {
+        public override Type ExpressionType => typeof(SpreadsheetParser.NegExpContext);
+
+        public override bool Translate()
+        {
+            var expr = (SpreadsheetParser.NegExpContext)Exp;
+            var paramFormula = Formulas.TranslateFormula(expr.param, CellIndex, out bool success);
+            if (success)
+            {
+                Node = new AbstractNegNode(this, paramFormula.Node);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public class AbstractPosFormula : AbstractFormula
+    {
+        public override Type ExpressionType => typeof(SpreadsheetParser.PosExpContext);
+
+        public override bool Translate()
+        {
+            var expr = (SpreadsheetParser.PosExpContext)Exp;
+            var paramFormula = Formulas.TranslateFormula(expr.param, CellIndex, out bool success);
+            if (success)
+            {
+                Node = new AbstractPosNode(this, paramFormula.Node);
+                return true;
+            }
+            return false;
+        }
+    }
+
 
 
 
@@ -519,7 +573,10 @@ namespace ANTLR_Test.Classes
                 if(context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -549,7 +606,10 @@ namespace ANTLR_Test.Classes
                 if (context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -577,7 +637,10 @@ namespace ANTLR_Test.Classes
                 if (context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -605,7 +668,10 @@ namespace ANTLR_Test.Classes
                 if (context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -633,7 +699,10 @@ namespace ANTLR_Test.Classes
                 if (context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -661,7 +730,10 @@ namespace ANTLR_Test.Classes
                 if (context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -689,7 +761,10 @@ namespace ANTLR_Test.Classes
                 if (context != null)
                 {
                     var formula = Formulas.TranslateFormula(context, CellIndex, out bool successFormula);
-                    formulaNodes.Add(formula.Node);
+                    if (successFormula)
+                    {
+                        formulaNodes.Add(formula.Node);
+                    }
                     success &= successFormula;
                 }
             }
@@ -714,21 +789,21 @@ namespace ANTLR_Test.Classes
 
             var arg1 = args.first;
             var formula1 = Formulas.TranslateFormula(arg1, CellIndex, out bool successFormula);
-            var node1 = formula1.Node;
             success &= successFormula;
 
             var arg2 = args.second;
             var formula2 = Formulas.TranslateFormula(arg2, CellIndex, out successFormula);
-            var node2 = formula2.Node;
             success &= successFormula;
 
             var arg3 = args.third;
             var formula3 = Formulas.TranslateFormula(arg3, CellIndex, out successFormula);
-            var node3 = formula3.Node;
             success &= successFormula;
 
             if (success)
             {
+                var node1 = formula1.Node;
+                var node2 = formula2.Node;
+                var node3 = formula3.Node;
                 Node = new AbstractIfFuncNode(this, node1, node2, node3);
             }
             return success;
@@ -747,21 +822,52 @@ namespace ANTLR_Test.Classes
 
             var arg1 = args.first;
             var formula1 = Formulas.TranslateFormula(arg1, CellIndex, out bool successFormula);
-            var node1 = formula1.Node;
             success &= successFormula;
 
             var arg2 = args.second;
             var formula2 = Formulas.TranslateFormula(arg2, CellIndex, out successFormula);
-            var node2 = formula2.Node;
             success &= successFormula;
 
             if (success)
             {
+                var node1 = formula1.Node;
+                var node2 = formula2.Node;
                 Node = new AbstractRoundupFuncNode(this, node1, node2);
             }
             return success;
         }
     }
+
+
+    public class AbstractRoundFuncFormula : AbstractFunctionFormula
+    {
+        public override Type FunctionType => typeof(SpreadsheetParser.RoundFuncContext);
+
+        public override bool TranslateFunction()
+        {
+            var exp = (SpreadsheetParser.RoundFuncContext)Fexp;
+            bool success = true;
+            var args = exp.twoArg();
+
+            var arg1 = args.first;
+            var formula1 = Formulas.TranslateFormula(arg1, CellIndex, out bool successFormula);
+            success &= successFormula;
+
+            var arg2 = args.second;
+            var formula2 = Formulas.TranslateFormula(arg2, CellIndex, out successFormula);
+            success &= successFormula;
+
+            if (success)
+            {
+                var node1 = formula1.Node;
+                var node2 = formula2.Node;
+                Node = new AbstractRoundFuncNode(this, node1, node2);
+            }
+            return success;
+        }
+    }
+
+
 
     public class AbstractIsblankFuncFormula : AbstractFunctionFormula
     {
@@ -775,11 +881,11 @@ namespace ANTLR_Test.Classes
 
             var arg1 = args.exp();
             var formula1 = Formulas.TranslateFormula(arg1, CellIndex, out bool successFormula);
-            var node1 = formula1.Node;
             success &= successFormula;
 
             if (success)
             {
+                var node1 = formula1.Node;
                 Node = new AbstractIsblankFuncNode(this, node1);
             }
             return success;
@@ -798,11 +904,11 @@ namespace ANTLR_Test.Classes
 
             var arg1 = args.exp();
             var formula1 = Formulas.TranslateFormula(arg1, CellIndex, out bool successFormula);
-            var node1 = formula1.Node;
             success &= successFormula;
 
             if (success)
             {
+                var node1 = formula1.Node;
                 Node = new AbstractIsnaFuncNode(this, node1);
             }
             return success;
@@ -822,11 +928,11 @@ namespace ANTLR_Test.Classes
 
             var arg1 = args.exp();
             var formula1 = Formulas.TranslateFormula(arg1, CellIndex, out bool successFormula);
-            var node1 = formula1.Node;
             success &= successFormula;
 
             if (success)
             {
+                var node1 = formula1.Node;
                 Node = new AbstractNFuncNode(this, node1);
             }
             return success;

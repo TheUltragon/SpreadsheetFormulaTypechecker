@@ -35,7 +35,6 @@ namespace ANTLR_Test.Classes
             if (success)
             {
                 Logger.DebugLine($"Registered abstractFormula {abstractFormula.ToString()}");
-                abstractFormula.Simplify();
                 Logger.DebugLine($"Simplified: {abstractFormula.ToString()}");
 
                 CellFormulas.Add(cell, abstractFormula);
@@ -81,7 +80,14 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    Logger.DebugLine($"Error - Couldnt Translate Formula, abstractFormula.Translate returned false. For type {formula.GetType()} and Cellindex {cellIndex.ToString()}", 5);
+                    if(cellIndex != null)
+                    {
+                        Logger.DebugLine($"Error - Couldnt Translate Formula, abstractFormula.Translate returned false. For type {formula.GetType()} and Cellindex {cellIndex.ToString()}", 5);
+                    }
+                    else
+                    {
+                        Logger.DebugLine($"Error - Couldnt Translate Formula, abstractFormula.Translate returned false. For type {formula.GetType()}", 5);
+                    }
                     success = false;
                     return null;
                 }

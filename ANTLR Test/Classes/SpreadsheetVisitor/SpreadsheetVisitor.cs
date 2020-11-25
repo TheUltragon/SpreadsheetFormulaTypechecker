@@ -18,7 +18,7 @@ namespace ANTLR_Test.Classes
         public ErrorHandler Handler { get; protected set; }
         public DataRepository Repository { get; protected set; }
         public int LastIntValue;
-        public VarType LastType { get; protected set; }
+        public Types LastType { get; protected set; }
         public Tuple<int, int> CurrentAddress { get; set; }
         public RelativityType LastRelativity { get; protected set; }
 
@@ -26,7 +26,7 @@ namespace ANTLR_Test.Classes
         {
             Handler = handler;
             Repository = new DataRepository(this);
-            LastType = VarType.None;
+            LastType = new Types(VarType.None);
             CurrentAddress = null;
             LastRelativity = RelativityType.None;
         }
@@ -35,7 +35,7 @@ namespace ANTLR_Test.Classes
         {
             Handler = handler;
             Repository = repository;
-            LastType = VarType.None;
+            LastType = new Types(VarType.None);
             CurrentAddress = null;
             LastRelativity = RelativityType.None;
         }
