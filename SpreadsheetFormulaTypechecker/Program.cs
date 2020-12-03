@@ -30,6 +30,8 @@ namespace ANTLR_Test
         public static int LastErrorInvocations;
 
         public static string corpusPath => @"C:\Users\Niklas Kolbe\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\spreadsheets";
+        public static string corpusPath2 => @"C:\Users\Admin\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\spreadsheets";
+        public static string corpusPath3 => @"C:\Users\Win10\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\spreadsheets";
 
         static void Main(string[] args)
         {
@@ -113,6 +115,8 @@ namespace ANTLR_Test
             string remainingOutput = "";
             //string input = Path.Combine("Data", "Handmade Examples");
             string input = corpusPath;
+            string input2 = corpusPath2;
+            string input3 = corpusPath3;
             string outputPath = Path.Combine("Data", "Imports");
             string logPath = Path.Combine("Persistent", "Logs");
             string logFilePath = Path.Combine(logPath, $"importLog_{DateTime.Now.ToFileFormatString()}.txt");
@@ -122,6 +126,8 @@ namespace ANTLR_Test
             //Init File list
             List<string> files = new List<string>();
             files.AddRange(ListFilesRecursively(input));
+            files.AddRange(ListFilesRecursively(input2));
+            files.AddRange(ListFilesRecursively(input3));
 
             //Set Counter to previous testrun if there was one
             int testrunCounter = getTestrunCounter(testrunCounterPath);

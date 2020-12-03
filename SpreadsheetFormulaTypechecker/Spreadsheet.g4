@@ -149,7 +149,7 @@ EUROS
 	;
 
 DOLLARS
-	: NUMBER '$'
+	: '$' NUMBER
 	;
 
 STRING
