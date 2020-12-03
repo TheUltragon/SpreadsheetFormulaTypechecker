@@ -40,7 +40,7 @@ namespace ANTLR_Test
             //Logger.SetOutputFile("Data\\Log.txt");
             Logger.SetMinDebugLevelToConsole(7);
 
-            Logger.DebugLine($"Program has started. Testrun: {testing.ToString()}", 7);
+            Logger.DebugLine($"Program has started. Testrun: {testing.ToString()}", 10);
 
             //Main Part for the Program
             if (testing == Testrun.All)

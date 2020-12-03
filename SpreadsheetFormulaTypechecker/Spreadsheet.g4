@@ -10,9 +10,9 @@ spreadSheet
 
 stm
 	: ';'															#emptyStm
-	| 'C[' left=exp '|' right=exp ']' 'is' tp=type					#cellTypeStm
-	| 'C[' left=exp '|' right=exp ']' '=' content=exp				#cellValueStm
-	| 'C[' left=exp '|' right=exp ']' '=' '{' content=exp '}'		#cellFormulaStm
+	| 'C[' left=exp ',' right=exp ']' 'is' tp=type					#cellTypeStm
+	| 'C[' left=exp ',' right=exp ']' '=' content=exp				#cellValueStm
+	| 'C[' left=exp ',' right=exp ']' '=' '{' content=exp '}'		#cellFormulaStm
 	| tp=type IDENT '=' val=exp										#assignStm
 	| 'eval'														#evalStm
 	| 'if' check=exp 'then' trueStm=stm 'else' falseStm=stm			#ifStm
@@ -24,7 +24,7 @@ exp
 	: fun=fexp														#functionExp
 	| val=value														#valueExp
 	| IDENT															#varExp
-	| 'C[' left=aexp '|' right=aexp ']'								#cellExp
+	| 'C[' left=aexp ',' right=aexp ']'								#cellExp
 	| '(' expr=exp ')'												#bracketExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp

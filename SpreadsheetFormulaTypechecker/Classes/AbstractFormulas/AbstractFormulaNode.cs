@@ -119,7 +119,7 @@ namespace ANTLR_Test.Classes
             {
                 right = "+" + right;
             }
-            return $"C[{left}|{right}]";
+            return $"C[{left},{right}]";
         }
 
         public Tuple<int, int> getThisCellIndex()

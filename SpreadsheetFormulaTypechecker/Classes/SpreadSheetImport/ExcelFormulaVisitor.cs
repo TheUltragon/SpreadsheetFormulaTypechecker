@@ -240,7 +240,7 @@ namespace ANTLR_Test.Classes
             //var column = result.Item2;
 
             lastAdress = result;
-            return $"C[{result.Item1}|{result.Item2}]";
+            return $"C[{result.Item1},{result.Item2}]";
         }
 
         public override string VisitSheetAdress([NotNull] ExcelFormulaParser.SheetAdressContext context)
@@ -416,11 +416,11 @@ namespace ANTLR_Test.Classes
                 {
                     if (counter == 0)
                     {
-                        childText += $"C[{i}|{j}]";
+                        childText += $"C[{i},{j}]";
                     }
                     else
                     {
-                        childText += $", C[{i}|{j}]";
+                        childText += $", C[{i},{j}]";
                     }
                     counter++;
                 }

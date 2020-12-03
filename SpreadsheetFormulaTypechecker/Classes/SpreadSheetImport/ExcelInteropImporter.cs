@@ -179,7 +179,7 @@ namespace ANTLR_Test.Classes
 
         private void addConvertedValue(object value, int i, int j)
         {
-            convertedText += $"C[{j}|{i}] = ";
+            convertedText += $"C[{j},{i}] = ";
             if (value is string)
             {
                 convertedText += $"\"{(string)value}\"";
@@ -362,7 +362,7 @@ namespace ANTLR_Test.Classes
                         }
                         Logger.DebugLine($"FormulaText: {formulaText}", 1);
 
-                        convertedText += $"C[{j}|{i}] = {{{formulaText}}}\n";
+                        convertedText += $"C[{j},{i}] = {{{formulaText}}}\n";
 
                     }
                 }
