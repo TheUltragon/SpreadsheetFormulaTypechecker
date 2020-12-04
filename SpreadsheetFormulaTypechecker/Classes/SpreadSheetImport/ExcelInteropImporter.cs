@@ -95,8 +95,6 @@ namespace ANTLR_Test.Classes
                     convertedText = "";
 
                     ProcessObjects(valueArray, formulaArray);
-                    //Add Implicit eval at end of file
-                    convertedText += "eval\n";
 
                     Logger.DebugLine($"=========================================", 10);
                     Logger.DebugLine($"Imported File Workbook {sheetNum}", 10);

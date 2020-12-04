@@ -44,22 +44,8 @@ namespace ANTLR_Test.Classes
 
 
     //========================================
-    // Value, Cell, Variable
+    // Value, Cell
     //========================================
-
-    public class AbstractVarFormula : AbstractFormula
-    {
-        public override Type ExpressionType => typeof(SpreadsheetParser.VarExpContext);
-
-        public override bool Translate()
-        {
-            //Visitor.Visit(Exp);
-            //var type = Visitor.LastType;
-            //Node = new AbstractTypeNode(this, type);
-            Logger.DebugLine("Error: Abstracting Var Formula not defined! (Per convention of paper)", 5);
-            return false;
-        }
-    }
 
 
     public class AbstractValueFormula : AbstractFormula
