@@ -14,6 +14,7 @@ namespace ResultsHandler
         public static List<Record> FinalRecords = new List<Record>();
 
         public static string ResultsInputPath => @"C:\Users\Win10\source\repos\BNFCTest\ANTLR Test\bin\Debug\Persistent\Logs";
+        public static string ResultsInputPath2 => @"C:\Users\Admin\source\repos\BNFCTest2\SpreadsheetFormulaTypechecker\bin\Debug\Persistent Old\Logs";
         public static string ResultsOutputPath => @"Output";
 
         private static string StartLineSearchPrefix => "========= ";
@@ -34,7 +35,15 @@ namespace ResultsHandler
 
         static void Main(string[] args)
         {
-            var files = Directory.EnumerateFiles(ResultsInputPath);
+            List<string> files = new List<string>();
+            if (Directory.Exists(ResultsInputPath))
+            {
+                files.AddRange(Directory.EnumerateFiles(ResultsInputPath));
+            }
+            if (Directory.Exists(ResultsInputPath2))
+            {
+                files.AddRange(Directory.EnumerateFiles(ResultsInputPath2));
+            }
             foreach (var file in files)
             {
                 var lines = File.ReadLines(file);
@@ -61,12 +70,17 @@ namespace ResultsHandler
 
             FinalRecords = OrderedRecords.Where(t => t.Value.IsAcceptable()).Select(t => t.Value).ToList();
 
+            var FinalRecordsError = FinalRecords.Where(t => t.Errors > 0).ToList();
+
+
             Dictionary<long, List<Record>> LogRecords = OrderRecordsInLogFormat(FinalRecords);
             List<Record> averagedLogRecords = LogRecords.Select(t => Record.combineRecords(t.Value)).ToList();
 
             WriteRecordsToFile(FinalRecords, "output.csv");
+            WriteRecordsToFile(FinalRecordsError, "errorOutput.csv");
             WriteRecordsToFile(averagedLogRecords, "logOutput.csv");
 
+            Console.WriteLine($"Press Enter to Exit");
             Console.ReadLine();
         }
 
@@ -85,11 +99,11 @@ namespace ResultsHandler
         {
             Dictionary<long, List<Record>> result = new Dictionary<long, List<Record>>();
             //Initialize Result Dictionary
-            for (int i = 1; i < 6; i++)
+            for (int i = 0; i < 6; i++)
             {
                 for (int j = 1; j < 10; j++)
                 {
-                    result.Add((long)Math.Pow(j,i), new List<Record>());
+                    result.Add((long)(j * Math.Pow(10,i)), new List<Record>());
                 }
             }
             //Go through each Record and put it into right spot of Dictionary
@@ -99,12 +113,12 @@ namespace ResultsHandler
                 {
                     var entry = result.ElementAt(i);
                     long max = entry.Key;
-                    Console.WriteLine($"Result Max: {max}");
+                    //Console.WriteLine($"Result Max: {max}");
                     if(record.Formulas <= max)
                     {
-                        Console.WriteLine($"Result Found: {record.Formulas}");
+                        //Console.WriteLine($"Result Found: {record.Formulas}");
                         entry.Value.Add(record);
-                        continue;
+                        break;
                     }
                 }
             }

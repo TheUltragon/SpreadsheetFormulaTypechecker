@@ -12,7 +12,7 @@ namespace ANTLR_Test.Classes
         private static bool Active = false;
         private static string OutputFilePath = "";
         private static string Output = "";
-        private static int MinLevelToConsole = 0;
+        public static int MinLevelToConsole = 0;
 
         public static void SetActive(bool active)
         {

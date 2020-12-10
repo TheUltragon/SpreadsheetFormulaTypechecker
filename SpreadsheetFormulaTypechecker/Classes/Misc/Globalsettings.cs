@@ -10,8 +10,12 @@ namespace ANTLR_Test.Classes
     {
         y_IgnoreCombination,
         Y_IgnoreWholeType,
+        yF_IgnoreCombinationForFile,
+        YF_IgnoreWholeTypeForFile,
         n_UnignoreCombination,
         N_UnignoreWholeType,
+        nF_UnignoreCombinationForFile,
+        NF_UnignoreWholeTypeForFile,
         DoNothing
     }
     
@@ -23,7 +27,7 @@ namespace ANTLR_Test.Classes
         public static bool ImportStopAtNextFile = false;
         public static bool TypecheckerStopAtNextFile = false;
         public static bool TypecheckerStopSyntaxError = false;
-        public static bool ErrorHandlerAskAtError = false;
+        public static bool ErrorHandlerAskAtError = true;
         public static TypecheckErrorAnswer ErrorHandlerDefaultAnswer = TypecheckErrorAnswer.DoNothing;
         public static bool LogIgnoredErrors = false;
         public static bool CheckIgnoreForUnspecifiedErrors = true;
@@ -31,6 +35,8 @@ namespace ANTLR_Test.Classes
         public static bool LoggerInstantOut = true;
 
         public static bool ResetTestrunCounter = false;
+
+        public static bool ClearImportsAtStart = true;
 
         public static string ConvertErrorAnswerToInput(TypecheckErrorAnswer answer)
         {
@@ -42,6 +48,14 @@ namespace ANTLR_Test.Classes
             {
                 return "Y";
             }
+            else if (answer == TypecheckErrorAnswer.yF_IgnoreCombinationForFile)
+            {
+                return "yF";
+            }
+            else if (answer == TypecheckErrorAnswer.YF_IgnoreWholeTypeForFile)
+            {
+                return "YF";
+            }
             else if (answer == TypecheckErrorAnswer.n_UnignoreCombination)
             {
                 return "n";
@@ -49,6 +63,14 @@ namespace ANTLR_Test.Classes
             else if (answer == TypecheckErrorAnswer.N_UnignoreWholeType)
             {
                 return "N";
+            }
+            else if(answer == TypecheckErrorAnswer.nF_UnignoreCombinationForFile)
+            {
+                return "nF";
+            }
+            else if (answer == TypecheckErrorAnswer.NF_UnignoreWholeTypeForFile)
+            {
+                return "NF";
             }
             else
             {

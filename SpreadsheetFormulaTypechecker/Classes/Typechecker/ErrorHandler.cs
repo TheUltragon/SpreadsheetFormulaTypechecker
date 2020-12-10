@@ -8,18 +8,29 @@ using Newtonsoft.Json;
 
 namespace ANTLR_Test.Classes
 {
-    public class ErrorHandlerData
+    public class ErrorHandlerPersistentData
     {
         public List<Tuple<ErrorType, string>> IgnoredErrors;
         public List<Tuple<ErrorType, string>> UnIgnoredErrors;
-        public int ErrorInvocations;
-        public int Errors;
 
-        public ErrorHandlerData()
+        public ErrorHandlerPersistentData()
         {
             IgnoredErrors = new List<Tuple<ErrorType, string>>();
             UnIgnoredErrors = new List<Tuple<ErrorType, string>>();
-            
+        }
+    }
+
+    public class ErrorHandlerTransientData
+    {
+        public List<Tuple<ErrorType, string>> FileIgnoredErrors;
+        public List<Tuple<ErrorType, string>> FileUnIgnoredErrors;
+        public int ErrorInvocations;
+        public int Errors;
+
+        public ErrorHandlerTransientData()
+        {
+            FileIgnoredErrors = new List<Tuple<ErrorType, string>>();
+            FileUnIgnoredErrors = new List<Tuple<ErrorType, string>>();
         }
     }
 
@@ -46,17 +57,24 @@ namespace ANTLR_Test.Classes
 
     public class ErrorHandler
     {
-        public ErrorHandlerData data;
+        public ErrorHandlerPersistentData data;
+        public ErrorHandlerTransientData fileData;
         private string path => "Persistent/ErrorHandler.json";
         public void Load()
         {
+            //Load Persistent data
+            if (!File.Exists(path))
+            {
+                data = new ErrorHandlerPersistentData();
+                return;
+            }
             using(StreamReader reader = File.OpenText(path))
             {
                 string jsonString = reader.ReadToEnd();
-                data = JsonConvert.DeserializeObject<ErrorHandlerData>(jsonString);
+                data = JsonConvert.DeserializeObject<ErrorHandlerPersistentData>(jsonString);
                 if (data == null)
                 {
-                    data = new ErrorHandlerData();
+                    data = new ErrorHandlerPersistentData();
                 }
             }
         }
@@ -74,14 +92,13 @@ namespace ANTLR_Test.Classes
         }
         public void Reset()
         {
-            data.ErrorInvocations = 0;
-            data.Errors = 0;
+            fileData = new ErrorHandlerTransientData();
         }
 
         //Returns, wether the error really was an error (false) or wether it was ignored (true)
         public bool ThrowError(int line, int column, bool ignoreable, ErrorType type, string specifier, string payload, Types combinedTypes)
         {
-            data.ErrorInvocations++;
+            fileData.ErrorInvocations++;
             if (null != combinedTypes && (combinedTypes.HasType(VarType.RuntimeError) || combinedTypes.HasType(VarType.TypeError)))
             {
                 Logger.DebugLine("Error has Type RuntimeError or TypeError as cause, skipping", 4);
@@ -99,14 +116,14 @@ namespace ANTLR_Test.Classes
             }
 
             //Check, wether unspecified errors should be ignore checked
-            if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && GlobalSettings.CheckIgnoreForUnspecifiedErrors)
+            if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && !checkIfErrorContainedInList(fileData.FileUnIgnoredErrors, type, specifier) && GlobalSettings.CheckIgnoreForUnspecifiedErrors)
             {
                 Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 10);
                 bool result = checkIgnoreForUnspecifiedError(type, specifier);
                 Save();
                 if (!result)
                 {
-                    data.Errors++;
+                    fileData.Errors++;
                 }
                 return result;
             }
@@ -115,18 +132,25 @@ namespace ANTLR_Test.Classes
                 Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 5);
             }
 
-            data.Errors++;
+            fileData.Errors++;
             return false;
         }
 
         private bool checkIgnoreForUnspecifiedError(ErrorType type, string specifier)
         {
             Logger.DebugLine($"Should this error be ignored?" +
-                $"\n    'y' to ignore this type and specifier combination, " +
-                $"\n    'Y' to ignore the whole type, " +
-                $"\n    'n' to keep reporting this type-specifier combination and " +
-                $"\n    'N' to keep reporting this error type, regardless of combination." +
-                $"\n    '?' to keep reporting this error type as an error, but ask again wether it should be ignored.", 10);
+                $"\n  To ignore this instance and mark it as no error do" + 
+                $"\n    'y' for type and specifier combination, " +
+                $"\n    'Y' for the whole type, " +
+                $"\n    'yF' for the type and specifier combination only for this file, " +
+                $"\n    'YF' for the whole type only for this file, " +
+                $"\n    'y?' only for once." +
+                $"\n  To not ignore this instance and mark it as an error do" +
+                $"\n    'n' for type and specifier combination, " +
+                $"\n    'N' for the whole type, " +
+                $"\n    'nF' for the type and specifier combination only for this file, " +
+                $"\n    'NF' for the whole type only for this file, " +
+                $"\n    'n?' only for once.", 10);
             while (true)
             {
                 string input = "?";
@@ -150,6 +174,20 @@ namespace ANTLR_Test.Classes
                     data.IgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
                     return true;
                 }
+                if (input.Equals("YF"))
+                {
+                    fileData.FileIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
+                    return true;
+                }
+                else if (input.Equals("yF"))
+                {
+                    fileData.FileIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
+                    return true;
+                }
+                else if (input.Equals("y?"))
+                {
+                    return true;
+                }
                 else if (input.Equals("N"))
                 {
                     data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
@@ -160,7 +198,17 @@ namespace ANTLR_Test.Classes
                     data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
                     return false;
                 }
-                else if (input.Equals("?"))
+                else if (input.Equals("NF"))
+                {
+                    fileData.FileUnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
+                    return false;
+                }
+                else if (input.Equals("nF"))
+                {
+                    fileData.FileUnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
+                    return false;
+                }
+                else if (input.Equals("n?"))
                 {
                     return false;
                 }
@@ -177,7 +225,15 @@ namespace ANTLR_Test.Classes
             {
                 return true;
             }
+            else if (checkIfErrorContainedInList(fileData.FileUnIgnoredErrors, type, specifier))
+            {
+                return true;
+            }
             else if(checkIfErrorContainedInList(data.IgnoredErrors, type, specifier))
+            {
+                return false;
+            }
+            else if (checkIfErrorContainedInList(fileData.FileIgnoredErrors, type, specifier))
             {
                 return false;
             }

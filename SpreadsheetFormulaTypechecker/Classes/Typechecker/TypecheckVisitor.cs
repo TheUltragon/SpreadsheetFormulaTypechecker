@@ -26,12 +26,7 @@ namespace ANTLR_Test.Classes
         public override bool VisitSpreadSheet([NotNull] SpreadsheetParser.SpreadSheetContext context)
         {
             Logger.DebugLine("Visit SpreadSheet");
-            bool result = true;
-            foreach (var child in context._statements)
-            {
-                result &= Visit(child);
-               
-            }
+            bool result = Visit(context.statement);
             return result;
         }
 
@@ -145,6 +140,15 @@ namespace ANTLR_Test.Classes
                     leftType.Combine(rightType)
                 );
             }
+            return result;
+        }
+
+        public override bool VisitSequenceStm([NotNull] SpreadsheetParser.SequenceStmContext context)
+        {
+            Logger.DebugLine("Visit Concat Stm");
+            bool result = true;
+            result &= Visit(context.left);
+            result &= Visit(context.right);
             return result;
         }
 
@@ -843,7 +847,7 @@ namespace ANTLR_Test.Classes
         // Additive Expressions
         // ==========================================
 
-        public override bool VisitBaseAExp([NotNull] SpreadsheetParser.BaseAExpContext context)
+        public override bool VisitBaseRExp([NotNull] SpreadsheetParser.BaseRExpContext context)
         {
             Logger.DebugLine("Visit Base A Exp");
             LastRelativity = RelativityType.None;
@@ -872,7 +876,7 @@ namespace ANTLR_Test.Classes
             return result;
         }
 
-        public override bool VisitNegAExp([NotNull] SpreadsheetParser.NegAExpContext context)
+        public override bool VisitNegRExp([NotNull] SpreadsheetParser.NegRExpContext context)
         {
             Logger.DebugLine("Visit Neg A Exp");
             LastRelativity = RelativityType.Negative;
@@ -900,7 +904,7 @@ namespace ANTLR_Test.Classes
             return result;
         }
 
-        public override bool VisitPosAExp([NotNull] SpreadsheetParser.PosAExpContext context)
+        public override bool VisitPosRExp([NotNull] SpreadsheetParser.PosRExpContext context)
         {
             Logger.DebugLine("Visit Pos A Exp");
             LastRelativity = RelativityType.Positive;

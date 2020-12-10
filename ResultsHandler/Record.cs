@@ -56,6 +56,10 @@ namespace ResultsHandler
 
         public static Record combineRecords(List<Record> records)
         {
+            if(records.Count == 0)
+            {
+                return new Record();
+            }
             long typecheckTime = 0;
             long importTime = 0;
             long fileSize = 0;

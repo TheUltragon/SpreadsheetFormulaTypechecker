@@ -115,19 +115,19 @@ namespace ANTLR_Test.Classes
             return true;
         }
 
-        private SpreadsheetParser.ExpContext getValueExp(SpreadsheetParser.AexpContext context)
+        private SpreadsheetParser.ExpContext getValueExp(SpreadsheetParser.RexpContext context)
         {
-            if(context is SpreadsheetParser.BaseAExpContext)
+            if(context is SpreadsheetParser.BaseRExpContext)
             {
-                return ((SpreadsheetParser.BaseAExpContext)context).param;
+                return ((SpreadsheetParser.BaseRExpContext)context).param;
             }
-            else if(context is SpreadsheetParser.PosAExpContext)
+            else if(context is SpreadsheetParser.PosRExpContext)
             {
-                return ((SpreadsheetParser.PosAExpContext)context).param;
+                return ((SpreadsheetParser.PosRExpContext)context).param;
             }
-            else if (context is SpreadsheetParser.NegAExpContext)
+            else if (context is SpreadsheetParser.NegRExpContext)
             {
-                return ((SpreadsheetParser.NegAExpContext)context).param;
+                return ((SpreadsheetParser.NegRExpContext)context).param;
             }
             else
             {
@@ -136,17 +136,17 @@ namespace ANTLR_Test.Classes
             }
         }
 
-        private Relativity getRelativity(SpreadsheetParser.AexpContext context)
+        private Relativity getRelativity(SpreadsheetParser.RexpContext context)
         {
-            if (context is SpreadsheetParser.BaseAExpContext)
+            if (context is SpreadsheetParser.BaseRExpContext)
             {
                 return Relativity.None;
             }
-            else if (context is SpreadsheetParser.NegAExpContext)
+            else if (context is SpreadsheetParser.NegRExpContext)
             {
                 return Relativity.Neg;
             }
-            else if (context is SpreadsheetParser.PosAExpContext)
+            else if (context is SpreadsheetParser.PosRExpContext)
             {
                 return Relativity.Pos;
             }

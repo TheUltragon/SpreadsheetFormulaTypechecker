@@ -195,7 +195,7 @@ namespace ANTLR_Test.Classes
                 convertedText += value.ToString();
             }
 
-            convertedText += "\n";
+            convertedText += " ;\n";
         }
 
         private void compareArrays(object[,] valueArray, object[,] formulaArray)
@@ -360,7 +360,7 @@ namespace ANTLR_Test.Classes
                         }
                         Logger.DebugLine($"FormulaText: {formulaText}", 1);
 
-                        convertedText += $"C[{j},{i}] = {{{formulaText}}}\n";
+                        convertedText += $"C[{j},{i}] = {{{formulaText}}} ;\n";
 
                     }
                 }

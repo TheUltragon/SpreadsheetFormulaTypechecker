@@ -5,19 +5,20 @@ grammar Spreadsheet;
  */
 
 spreadSheet
-	:	statements+=stm+
+	:	statement=stm ';'
 	;
 
 stm
 	: 'C[' left=exp ',' right=exp ']' '=' content=exp				#cellValueStm
 	| 'C[' left=exp ',' right=exp ']' '=' '{' content=exp '}'		#cellFormulaStm
+	| left=stm ';' right=stm										#sequenceStm
 	;
 
 
 exp
 	: fun=fexp														#functionExp
 	| val=value														#valueExp
-	| 'C[' left=aexp ',' right=aexp ']'								#cellExp
+	| 'C[' left=rexp ',' right=rexp ']'								#cellExp
 	| '(' expr=exp ')'												#bracketExp
 	| left=exp '*' right=exp										#multExp
 	| left=exp '/' right=exp										#divExp
@@ -70,10 +71,10 @@ anyArg
 	: '(' expr+=exp (',' expr+=exp)* ')'
 	;
 
-aexp
-	: '->' param=exp												#posAExp
-	| '<-' param=exp												#negAExp
-	| param=exp														#baseAExp
+rexp
+	: '->' param=exp												#posRExp
+	| '<-' param=exp												#negRExp
+	| param=exp														#baseRExp
 	;
 
 type
@@ -134,19 +135,19 @@ INT
 	;
 
 DECIMAL     
-	: [-+]?[0-9]+ [.] [0-9]+
+	: [-+]?[0-9]+[.][0-9]+([eE][-+]?[0-9]+)?
 	;
 
 EUROS
-	: NUMBER '€'
+	: NUMBER [€]
 	;
 
 DOLLARS
-	: '$' NUMBER
+	: [$] NUMBER
 	;
 
 STRING
-    : '"' ( EscapeSequence | ~('\\'|'"') )* '"'
+    : '"' ( EscapeSequence | ~('"') )* '"'
     ;
 
 DATE

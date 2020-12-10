@@ -35,12 +35,26 @@ namespace ANTLR_Test
 
         static void Main(string[] args)
         {
-            Testrun testing = Testrun.HandmadeTestrun;
+            Testrun testing = Testrun.HandmadeImport;
             Logger.SetActive(true);
             //Logger.SetOutputFile("Data\\Log.txt");
             Logger.SetMinDebugLevelToConsole(7);
 
             Logger.DebugLine($"Program has started. Testrun: {testing.ToString()}", 10);
+
+            if (GlobalSettings.ClearImportsAtStart)
+            {
+                var path = Path.Combine("Data", "Imports");
+                DirectoryInfo di = new DirectoryInfo(path);
+                foreach (FileInfo file in di.EnumerateFiles())
+                {
+                    file.Delete();
+                }
+                foreach (DirectoryInfo dir in di.EnumerateDirectories())
+                {
+                    dir.Delete(true);
+                }
+            }
 
             //Main Part for the Program
             if (testing == Testrun.All)
@@ -332,17 +346,21 @@ namespace ANTLR_Test
                 }
                 Logger.DebugLine("===================================", 5);
             }
-            Logger.DebugLine($"Detected Errors: {handler.data.Errors} (Invocations: {handler.data.ErrorInvocations})", 10);
+            Logger.DebugLine($"Detected Errors: {handler.fileData.Errors} (Invocations: {handler.fileData.ErrorInvocations})", 10);
 
             LastCells = visitor.Repository.CellTypes.Count;
             LastFormulas = visitor.Repository.Formulas.CellFormulas.Count;
-            LastErrors = handler.data.Errors;
-            LastErrorInvocations = handler.data.ErrorInvocations;
+            LastErrors = handler.fileData.Errors;
+            LastErrorInvocations = handler.fileData.ErrorInvocations;
             Logger.DebugLine("", 10);
         }
 
         static void PrintContext(IParseTree context, int debugLevel, int depth)
         {
+            if(debugLevel < Logger.MinLevelToConsole)
+            {
+                return;
+            }
             string prefix = "";
             for(int i = 0; i<depth; i++)
             {
