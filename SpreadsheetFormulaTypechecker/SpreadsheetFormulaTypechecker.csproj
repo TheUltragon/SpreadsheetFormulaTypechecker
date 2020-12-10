@@ -131,6 +131,7 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
+    <None Include="Persistent\ErrorHandler.json" />
     <None Include="Testsuite\Bad\AAA Recursion\Recursion.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -181,10 +182,10 @@
     <Content Include="Data\Imports\NON-EMPTY.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Persistent\TestrunCounter.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Data\Handmade Examples\Problematic\" />
-    <Folder Include="Persistent\" />
   </ItemGroup>
   <ItemGroup>
     <COMReference Include="Microsoft.Office.Core">
