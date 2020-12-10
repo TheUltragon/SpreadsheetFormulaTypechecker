@@ -104,26 +104,11 @@
     <None Include="Data\Corpus\BKUP\posey_Q1.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Handmade Examples\Backup\02rise.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Handmade Examples\Backup\annrep.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Handmade Examples\Backup\act3_lab23_posey.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Antlr4 Include="ExcelFormula.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
-    <None Include="Data\Handmade Examples\Backup\pl_student2002.xls">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="Data\Handmade Examples\Handmade Example 1.xlsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Handmade Examples\Backup\URTT_0304.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
@@ -131,7 +116,9 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
-    <None Include="Persistent\ErrorHandler.json" />
+    <None Include="Persistent\ErrorHandler.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Testsuite\Bad\AAA Recursion\Recursion.xl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -182,9 +169,12 @@
     <Content Include="Data\Imports\NON-EMPTY.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Persistent\TestrunCounter.txt" />
+    <Content Include="Persistent\TestrunCounter.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Data\Handmade Examples\Backup\" />
     <Folder Include="Data\Handmade Examples\Problematic\" />
   </ItemGroup>
   <ItemGroup>

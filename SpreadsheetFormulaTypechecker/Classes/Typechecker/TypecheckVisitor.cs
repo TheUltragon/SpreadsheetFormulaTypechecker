@@ -26,7 +26,11 @@ namespace ANTLR_Test.Classes
         public override bool VisitSpreadSheet([NotNull] SpreadsheetParser.SpreadSheetContext context)
         {
             Logger.DebugLine("Visit SpreadSheet");
-            bool result = Visit(context.statement);
+            bool result = true;
+            foreach(var stm in context._statements)
+            {
+                result &= Visit(stm);
+            }
             return result;
         }
 
@@ -140,15 +144,6 @@ namespace ANTLR_Test.Classes
                     leftType.Combine(rightType)
                 );
             }
-            return result;
-        }
-
-        public override bool VisitSequenceStm([NotNull] SpreadsheetParser.SequenceStmContext context)
-        {
-            Logger.DebugLine("Visit Concat Stm");
-            bool result = true;
-            result &= Visit(context.left);
-            result &= Visit(context.right);
             return result;
         }
 

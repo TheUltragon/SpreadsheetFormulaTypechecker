@@ -35,7 +35,7 @@ namespace ANTLR_Test
 
         static void Main(string[] args)
         {
-            Testrun testing = Testrun.HandmadeImport;
+            Testrun testing = Testrun.HandmadeTestrun;
             Logger.SetActive(true);
             //Logger.SetOutputFile("Data\\Log.txt");
             Logger.SetMinDebugLevelToConsole(7);

@@ -5,13 +5,12 @@ grammar Spreadsheet;
  */
 
 spreadSheet
-	:	statement=stm ';'
+	:	statements+=stm+
 	;
 
 stm
-	: 'C[' left=exp ',' right=exp ']' '=' content=exp				#cellValueStm
-	| 'C[' left=exp ',' right=exp ']' '=' '{' content=exp '}'		#cellFormulaStm
-	| left=stm ';' right=stm										#sequenceStm
+	: 'C[' left=exp ',' right=exp ']' '=' content=exp ';'			#cellValueStm
+	| 'C[' left=exp ',' right=exp ']' '=' '{' content=exp '}' ';'	#cellFormulaStm
 	;
 
 
