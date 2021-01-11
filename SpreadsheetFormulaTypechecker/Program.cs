@@ -12,15 +12,18 @@ using System.Diagnostics;
 
 namespace ANTLR_Test
 {
-    public enum Testrun
+    public enum ProgramSetting
     {
-        Positive,
-        Error,
+        SpreadsheetRun = 1,
+        CorpusRun,
+        AllTests,
+        PositiveTests,
+        ErrorTests,
         Import,
-        ImportTest,
         HandmadeImport,
-        HandmadeTestrun,
-        All
+        ResetCorpusPath,
+
+        ImportTest,
     }
     class Program
     {
@@ -30,17 +33,16 @@ namespace ANTLR_Test
         public static int LastErrorInvocations;
 
         public static string corpusPath => @"C:\Users\Niklas Kolbe\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\spreadsheets";
-        public static string corpusPath2 => @"C:\Users\Admin\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\spreadsheets";
+        public static string corpusPath2 => @"C:\Users\Admin\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\EUSES 2005\spreadsheets";
         public static string corpusPath3 => @"C:\Users\Win10\OneDrive\Dropbox\StudFiles\Bachelorarbeit\Static Analysis of Spreadsheets\Literatur\Sekundäre Literatur\EUSES\spreadsheets";
 
         static void Main(string[] args)
         {
-            Testrun testing = Testrun.HandmadeTestrun;
-            Logger.SetActive(true);
+            GlobalSettings.Load();
+            GlobalSettings.Save();
+            Logger.SetActive(GlobalSettings.LoggerActive);
             //Logger.SetOutputFile("Data\\Log.txt");
-            Logger.SetMinDebugLevelToConsole(7);
-
-            Logger.DebugLine($"Program has started. Testrun: {testing.ToString()}", 10);
+            Logger.SetMinDebugLevelToConsole(GlobalSettings.MinConsoleLevel);
 
             if (GlobalSettings.ClearImportsAtStart)
             {
@@ -56,48 +58,104 @@ namespace ANTLR_Test
                 }
             }
 
-            //Main Part for the Program
-            if (testing == Testrun.All)
+            while (true)
             {
-                Import(testing);
-                TestSuite(testing);
-            }
-            else if (testing == Testrun.Import)
-            {
-                Import(testing);
-                TestSuite(testing);
-            }
-            else if (testing == Testrun.ImportTest)
-            {
-                ImportTest();
-                Import(testing);
-                TestSuite(testing);
-            }
-            else if (testing == Testrun.HandmadeImport)
-            {
-                Import(testing);
-                TestSuite(testing);
-            }
-            else if (testing == Testrun.HandmadeTestrun)
-            {
-                HandmadeTestrun();
-            }
-            else if(testing == Testrun.Error)
-            {
-                TestSuite(testing);
-            }
-            else if (testing == Testrun.Positive)
-            {
-                TestSuite(testing);
-            }
+                GlobalSettings.ShowSettingsPath();
+                ProgramSetting testing = GetProgramSetting();
 
+                Logger.DebugLine($"Chosen Program: {testing.ToString()}", 10);
 
-            Logger.SaveToFile();
-            Logger.DebugLine("Program has ended. Press Enter to close it", 10);
-            Console.ReadLine();
+                //Main Part for the Program
+                if (testing == ProgramSetting.AllTests)
+                {
+                    TestSuite(testing);
+                }
+                else if (testing == ProgramSetting.ErrorTests)
+                {
+                    TestSuite(testing);
+                }
+                else if (testing == ProgramSetting.PositiveTests)
+                {
+                    TestSuite(testing);
+                }
+                else if (testing == ProgramSetting.Import)
+                {
+                    Import(testing);
+                    TestSuite(testing);
+                }
+                else if (testing == ProgramSetting.ImportTest)
+                {
+                    ImportTest();
+                }
+                else if (testing == ProgramSetting.HandmadeImport)
+                {
+                    Import(testing);
+                    TestSuite(testing);
+                }
+                else if (testing == ProgramSetting.CorpusRun)
+                {
+                    CorpusTestrun();
+                    //CorpusTestrun(t =>
+                    //    {
+                    //        var filesize = (long)Math.Round(new FileInfo(t).Length / 1024.0);
+                    //        return filesize >= 150 && filesize <= 300;
+                    //    }
+                    //);
+                }
+                else if (testing == ProgramSetting.SpreadsheetRun)
+                {
+                    SpreadsheetTestrun();
+                }
+                else if(testing == ProgramSetting.ResetCorpusPath)
+                {
+                    GlobalSettings.data.ImportPathEuses = GlobalSettings.GetImportEusesFromUser();
+                }
+
+                Logger.SaveToFile();
+                Console.WriteLine("Program has ended. Press Enter to restart");
+                Console.ReadLine();
+                Console.Clear();
+            }
         }
 
-        
+        private static ProgramSetting GetProgramSetting()
+        {
+            Console.WriteLine(
+                $"============================================= \n" +
+                $"{(int)ProgramSetting.SpreadsheetRun}: Import a spreadsheet from the user and then typecheck it. Recorded in 'Persistent\\Logs'\n" +
+                $"{(int)ProgramSetting.CorpusRun}: Import and typecheck each spreadsheet in the user specified folder tree. Recorded in 'Persistent\\Logs'\n" +
+                $"--------------------------------------------- \n" +
+                $"{(int)ProgramSetting.AllTests}: Run all tests\n" +
+                $"{(int)ProgramSetting.PositiveTests}: Run all tests that dont produce errors\n" +
+                $"{(int)ProgramSetting.ErrorTests}: Run all tests that produce errors\n" +
+                $"--------------------------------------------- \n" +
+                $"{(int)ProgramSetting.Import}: Import all spreadsheets in the user specified folder tree entirely and then typecheck them\n" +
+                $"{(int)ProgramSetting.HandmadeImport}: Import all spreadsheets in 'Data\\Handmade Examples' entirely and then typecheck them\n" +
+                $"--------------------------------------------- \n" +
+                $"{(int)ProgramSetting.ResetCorpusPath}: Input the path to the spreadsheet corpus.\n" +
+                $"============================================= \n\n" +
+                $"Please choose a number to run the associated program:"
+                );
+            while (true)
+            {
+                string input = Console.ReadLine();
+                if (int.TryParse(input, out int choice))
+                {
+                    if (choice == (int)ProgramSetting.AllTests ||
+                        choice == (int)ProgramSetting.ErrorTests ||
+                        choice == (int)ProgramSetting.PositiveTests ||
+                        choice == (int)ProgramSetting.Import ||
+                        choice == (int)ProgramSetting.HandmadeImport ||
+                        choice == (int)ProgramSetting.SpreadsheetRun ||
+                        choice == (int)ProgramSetting.ResetCorpusPath ||
+                        choice == (int)ProgramSetting.CorpusRun)
+                    {
+                        return (ProgramSetting)choice;
+                    }
+                }
+                Console.WriteLine("Invalid input, please choose a number associated with a program:");
+            }
+        }
 
         static List<string> ListFilesRecursively(string sDir)
         {
@@ -122,16 +180,45 @@ namespace ANTLR_Test
             return files;
         }
 
-        private static void HandmadeTestrun()
+        private static void SpreadsheetTestrun()
+        {
+            ExcelInteropImporter excelInteropImporter = new ExcelInteropImporter();
+
+            string logPath = Path.Combine("Persistent", "Logs");
+            string logFilePath = Path.Combine(logPath, $"importLog_{DateTime.Now.ToFileFormatString()}.txt");
+
+            //Create Logfile and Path
+            Directory.CreateDirectory(logPath);
+            File.WriteAllText(logFilePath, "");
+
+            string file = GetSpreadsheetFilePathFromUser();
+
+            HandleSpreadsheet(file, excelInteropImporter, "", logFilePath);
+        }
+
+        private static string GetSpreadsheetFilePathFromUser()
+        {
+            Console.WriteLine($"======================================================");
+            Console.WriteLine($"Please input the path to the spreadsheet:");
+            while (true)
+            {
+                string path = Console.ReadLine();
+                if (File.Exists(path))
+                {
+                    Console.WriteLine($"======================================================");
+                    return path;
+                }
+                Console.WriteLine($"Path did not lead to a file, please input a valid path:");
+            }
+        }
+
+        private static void CorpusTestrun(Func<string, bool> acceptCriterion = null, string fileOverwrite = "")
         {
             ExcelInteropImporter excelInteropImporter = new ExcelInteropImporter();
 
             string remainingOutput = "";
             //string input = Path.Combine("Data", "Handmade Examples");
-            string input = corpusPath;
-            string input2 = corpusPath2;
-            string input3 = corpusPath3;
-            string outputPath = Path.Combine("Data", "Imports");
+            string input = GlobalSettings.ImportPathCorpus;
             string logPath = Path.Combine("Persistent", "Logs");
             string logFilePath = Path.Combine(logPath, $"importLog_{DateTime.Now.ToFileFormatString()}.txt");
             string testrunCounterPath = Path.Combine("Persistent", "TestrunCounter.txt");
@@ -140,8 +227,6 @@ namespace ANTLR_Test
             //Init File list
             List<string> files = new List<string>();
             files.AddRange(ListFilesRecursively(input));
-            files.AddRange(ListFilesRecursively(input2));
-            files.AddRange(ListFilesRecursively(input3));
 
             //Set Counter to previous testrun if there was one
             int testrunCounter = getTestrunCounter(testrunCounterPath);
@@ -158,71 +243,85 @@ namespace ANTLR_Test
                 {
                     continue;
                 }
-                Logger.DebugLine($"Handmade Testrun file {file} start.", 10);
-                Stopwatch stopwatchImport = Stopwatch.StartNew();
-                string output = Path.Combine(outputPath, Path.GetFileNameWithoutExtension(file));
-                Directory.CreateDirectory(output);
-                excelInteropImporter.ImportFile(file, output);
-
-                stopwatchImport.Stop();
-                Stopwatch stopwatchTypecheck = Stopwatch.StartNew();
-
-                int cellsTotal = 0;
-                int formulasTotal = 0;
-                int errorsTotal = 0;
-                int errorInvocationsTotal = 0;
-
-                List<string> outputFiles = new List<string>();
-                outputFiles.AddRange(Directory.EnumerateFiles(output));
-                foreach (var outputFile in outputFiles)
+                if (acceptCriterion != null && !acceptCriterion(file))
                 {
-                    TypecheckFile(outputFile);
-
-                    cellsTotal += LastCells;
-                    formulasTotal += LastFormulas;
-                    errorsTotal += LastErrors;
-                    errorInvocationsTotal += LastErrorInvocations;
+                    Logger.DebugLine($"acceptCriterion for file {file} failed.", 7);
+                    continue;
                 }
-                stopwatchTypecheck.Stop();
-                Logger.DebugLine($"Handmade Testrun file {file} finish.", 10);
 
-                long typecheckTime = stopwatchTypecheck.ElapsedMilliseconds;
-                long importTime = stopwatchImport.ElapsedMilliseconds;
-                long totalTime = typecheckTime + importTime;
-                double importPercent = (double)importTime / (double)totalTime;
-                long fileSize = (long)Math.Round(new FileInfo(file).Length / 1024.0);
-                string importOutput = $"========= {Path.GetFileName(file)} =========\n";
-                importOutput += $"Filesize (KB): {fileSize}\n";
-                importOutput += $"\n";
-                importOutput += $"Cells Total: {cellsTotal}\n";
-                importOutput += $"Formulas Total: {formulasTotal}\n";
-                importOutput += $"Formulas Percent: {(double)formulasTotal / (double)cellsTotal}\n";
-                importOutput += $"\n";
-                importOutput += $"Errors Total: {errorsTotal}\n";
-                importOutput += $"Error Invocations Total: {errorInvocationsTotal}\n";
-                importOutput += $"\n";
-                importOutput += $"Typecheck time: {typecheckTime}\n";
-                importOutput += $"Import time: {importTime}\n";
-                importOutput += $"Total time: {totalTime}\n";
-                importOutput += $"Import time Percent: {importPercent}\n";
-                importOutput += "===========================================\n";
-                importOutput += "\n";
-                importOutput += $"\n";
-                Logger.DebugLine(importOutput, 10);
-                remainingOutput += importOutput;
+                remainingOutput = HandleSpreadsheet(file, excelInteropImporter, remainingOutput, logFilePath);
 
                 File.WriteAllText(testrunCounterPath, "" + i);
-
-                try
-                {
-                    File.AppendAllText(logFilePath, remainingOutput);
-                    remainingOutput = "";
-                }
-                catch(Exception e)
-                {
-                    Logger.DebugLine("Exception while trying to save Log output",10);
-                }
             }
+        }
+
+        private static string HandleSpreadsheet(string file, ExcelInteropImporter excelInteropImporter, string remainingOutput, string logFilePath)
+        {
+            string outputPath = Path.Combine("Data", "Imports");
+            Logger.DebugLine($"Handmade Testrun file {file} start.", 10);
+            Stopwatch stopwatchImport = Stopwatch.StartNew();
+            string output = Path.Combine(outputPath, Path.GetFileNameWithoutExtension(file));
+            Directory.CreateDirectory(output);
+            excelInteropImporter.ImportFile(file, output);
+
+            stopwatchImport.Stop();
+            Stopwatch stopwatchTypecheck = Stopwatch.StartNew();
+
+            int cellsTotal = 0;
+            int formulasTotal = 0;
+            int errorsTotal = 0;
+            int errorInvocationsTotal = 0;
+
+            List<string> outputFiles = new List<string>();
+            outputFiles.AddRange(Directory.EnumerateFiles(output));
+            foreach (var outputFile in outputFiles)
+            {
+                TypecheckFile(outputFile);
+
+                cellsTotal += LastCells;
+                formulasTotal += LastFormulas;
+                errorsTotal += LastErrors;
+                errorInvocationsTotal += LastErrorInvocations;
+            }
+            stopwatchTypecheck.Stop();
+            Logger.DebugLine($"Handmade Testrun file {file} finish.", 10);
+
+            long typecheckTime = stopwatchTypecheck.ElapsedMilliseconds;
+            long importTime = stopwatchImport.ElapsedMilliseconds;
+            long totalTime = typecheckTime + importTime;
+            double importPercent = (double)importTime / (double)totalTime;
+            long fileSize = (long)Math.Round(new FileInfo(file).Length / 1024.0);
+            string importOutput = $"========= {Path.GetFileName(file)} =========\n";
+            importOutput += $"Filesize (KB): {fileSize}\n";
+            importOutput += $"\n";
+            importOutput += $"Cells Total: {cellsTotal}\n";
+            importOutput += $"Formulas Total: {formulasTotal}\n";
+            importOutput += $"Formulas Percent: {(double)formulasTotal / (double)cellsTotal}\n";
+            importOutput += $"\n";
+            importOutput += $"Errors Total: {errorsTotal}\n";
+            importOutput += $"Error Invocations Total: {errorInvocationsTotal}\n";
+            importOutput += $"\n";
+            importOutput += $"Typecheck time: {typecheckTime}\n";
+            importOutput += $"Import time: {importTime}\n";
+            importOutput += $"Total time: {totalTime}\n";
+            importOutput += $"Import time Percent: {importPercent}\n";
+            importOutput += "===========================================\n";
+            importOutput += "\n";
+            importOutput += $"\n";
+            Logger.DebugLine(importOutput, 10);
+            remainingOutput += importOutput;
+
+            try
+            {
+                File.AppendAllText(logFilePath, remainingOutput);
+                remainingOutput = "";
+            }
+            catch (Exception e)
+            {
+                Logger.DebugLine("Exception while trying to save Log output", 10);
+            }
+
+            return remainingOutput;
         }
 
         private static int getTestrunCounter(string testrunCounterPath)
@@ -239,22 +338,22 @@ namespace ANTLR_Test
             return 0;
         }
 
-        static void TestSuite(Testrun testing)
+        static void TestSuite(ProgramSetting testing)
         {
             List<string> files = new List<string>();
-            if(testing == Testrun.Positive)
+            if(testing == ProgramSetting.PositiveTests)
             {
                 files.AddRange(ListFilesRecursively("Testsuite\\Good"));
             }
-            else if(testing == Testrun.Error)
+            else if(testing == ProgramSetting.ErrorTests)
             {
                 files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
             }
-            else if (testing == Testrun.Import || testing == Testrun.ImportTest || testing == Testrun.HandmadeImport)
+            else if (testing == ProgramSetting.Import || testing == ProgramSetting.ImportTest || testing == ProgramSetting.HandmadeImport)
             {
                 files.AddRange(ListFilesRecursively("Data\\Imports"));
             }
-            else if (testing == Testrun.All)
+            else if (testing == ProgramSetting.AllTests)
             {
                 files.AddRange(ListFilesRecursively("Testsuite\\Good"));
                 files.AddRange(ListFilesRecursively("Testsuite\\Bad"));
@@ -375,7 +474,7 @@ namespace ANTLR_Test
             }
         }
 
-        static void Import(Testrun testing)
+        static void Import(ProgramSetting testing)
         {
             ExcelReaderImporter excelReaderImporter = new ExcelReaderImporter();
             LinqToExcelImporter linqToExcelImporter = new LinqToExcelImporter();
@@ -383,15 +482,15 @@ namespace ANTLR_Test
 
             string output = "Data\\Imports";
             List<string> files = new List<string>();
-            if(testing == Testrun.Import)
+            if(testing == ProgramSetting.Import)
             {
-                files.AddRange(ListFilesRecursively(corpusPath));
+                files.AddRange(ListFilesRecursively(GlobalSettings.ImportPathCorpus));
             }
-            else if(testing == Testrun.ImportTest)
+            else if(testing == ProgramSetting.ImportTest)
             {
                 files.AddRange(Directory.EnumerateFiles("Data\\Corpus"));
             }
-            else if (testing == Testrun.HandmadeImport)
+            else if (testing == ProgramSetting.HandmadeImport)
             {
                 files.AddRange(Directory.EnumerateFiles("Data\\Handmade Examples"));
             }

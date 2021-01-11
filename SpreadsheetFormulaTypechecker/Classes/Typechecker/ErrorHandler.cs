@@ -8,29 +8,46 @@ using Newtonsoft.Json;
 
 namespace ANTLR_Test.Classes
 {
+    public class Error : IEquatable<Error>
+    {
+        public ErrorType Type;
+        public string Specifier;
+
+        public Error(ErrorType type, string specifier)
+        {
+            Type = type;
+            Specifier = specifier;
+        }
+
+        public bool Equals(Error other)
+        {
+            return Type == other.Type && Specifier == other.Specifier;
+        }
+
+    }
     public class ErrorHandlerPersistentData
     {
-        public List<Tuple<ErrorType, string>> IgnoredErrors;
-        public List<Tuple<ErrorType, string>> UnIgnoredErrors;
+        public List<Error> IgnoredErrors;
+        public List<Error> UnIgnoredErrors;
 
         public ErrorHandlerPersistentData()
         {
-            IgnoredErrors = new List<Tuple<ErrorType, string>>();
-            UnIgnoredErrors = new List<Tuple<ErrorType, string>>();
+            IgnoredErrors = new List<Error>();
+            UnIgnoredErrors = new List<Error>();
         }
     }
 
     public class ErrorHandlerTransientData
     {
-        public List<Tuple<ErrorType, string>> FileIgnoredErrors;
-        public List<Tuple<ErrorType, string>> FileUnIgnoredErrors;
+        public List<Error> FileIgnoredErrors;
+        public List<Error> FileUnIgnoredErrors;
         public int ErrorInvocations;
         public int Errors;
 
         public ErrorHandlerTransientData()
         {
-            FileIgnoredErrors = new List<Tuple<ErrorType, string>>();
-            FileUnIgnoredErrors = new List<Tuple<ErrorType, string>>();
+            FileIgnoredErrors = new List<Error>();
+            FileUnIgnoredErrors = new List<Error>();
         }
     }
 
@@ -81,7 +98,7 @@ namespace ANTLR_Test.Classes
 
         public void Save()
         {
-            string jsonString = JsonConvert.SerializeObject(data);
+            string jsonString = JsonConvert.SerializeObject(data, Formatting.Indented);
             File.WriteAllText(path, jsonString);
         }
 
@@ -89,6 +106,7 @@ namespace ANTLR_Test.Classes
         {
             Load();
             Reset();
+            Save();
         }
         public void Reset()
         {
@@ -118,7 +136,7 @@ namespace ANTLR_Test.Classes
             //Check, wether unspecified errors should be ignore checked
             if(ignoreable && !checkIfErrorContainedInList(data.UnIgnoredErrors, type, specifier) && !checkIfErrorContainedInList(fileData.FileUnIgnoredErrors, type, specifier) && GlobalSettings.CheckIgnoreForUnspecifiedErrors)
             {
-                Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", 10);
+                Logger.DebugLine($"Error at {line},{column} of type '{type}' and specifier '{specifier}': {payload}", -1);
                 bool result = checkIgnoreForUnspecifiedError(type, specifier);
                 Save();
                 if (!result)
@@ -138,7 +156,7 @@ namespace ANTLR_Test.Classes
 
         private bool checkIgnoreForUnspecifiedError(ErrorType type, string specifier)
         {
-            Logger.DebugLine($"Should this error be ignored?" +
+            Console.WriteLine($"Should this error be ignored?" +
                 $"\n  To ignore this instance and mark it as no error do" + 
                 $"\n    'y' for type and specifier combination, " +
                 $"\n    'Y' for the whole type, " +
@@ -150,7 +168,7 @@ namespace ANTLR_Test.Classes
                 $"\n    'N' for the whole type, " +
                 $"\n    'nF' for the type and specifier combination only for this file, " +
                 $"\n    'NF' for the whole type only for this file, " +
-                $"\n    'n?' only for once.", 10);
+                $"\n    'n?' only for once.");
             while (true)
             {
                 string input = "?";
@@ -166,22 +184,22 @@ namespace ANTLR_Test.Classes
 
                 if (input.Equals("Y"))
                 {
-                    data.IgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
+                    data.IgnoredErrors.Add(new Error(type, "*"));
                     return true;
                 }
                 else if (input.Equals("y"))
                 {
-                    data.IgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
+                    data.IgnoredErrors.Add(new Error(type, specifier));
                     return true;
                 }
                 if (input.Equals("YF"))
                 {
-                    fileData.FileIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
+                    fileData.FileIgnoredErrors.Add(new Error(type, "*"));
                     return true;
                 }
                 else if (input.Equals("yF"))
                 {
-                    fileData.FileIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
+                    fileData.FileIgnoredErrors.Add(new Error(type, specifier));
                     return true;
                 }
                 else if (input.Equals("y?"))
@@ -190,22 +208,22 @@ namespace ANTLR_Test.Classes
                 }
                 else if (input.Equals("N"))
                 {
-                    data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
+                    data.UnIgnoredErrors.Add(new Error(type, "*"));
                     return false;
                 }
                 else if (input.Equals("n"))
                 {
-                    data.UnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
+                    data.UnIgnoredErrors.Add(new Error(type, specifier));
                     return false;
                 }
                 else if (input.Equals("NF"))
                 {
-                    fileData.FileUnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, "*"));
+                    fileData.FileUnIgnoredErrors.Add(new Error(type, "*"));
                     return false;
                 }
                 else if (input.Equals("nF"))
                 {
-                    fileData.FileUnIgnoredErrors.Add(new Tuple<ErrorType, string>(type, specifier));
+                    fileData.FileUnIgnoredErrors.Add(new Error(type, specifier));
                     return false;
                 }
                 else if (input.Equals("n?"))
@@ -214,7 +232,7 @@ namespace ANTLR_Test.Classes
                 }
                 else
                 {
-                    Logger.DebugLine($"Unknown input, please input either 'Y', 'y', 'N', 'n' or '?'.", 10);
+                    Console.WriteLine($"Unknown input, please input either 'Y', 'y', 'N', 'n' or '?'.");
                 }
             }
         }
@@ -243,13 +261,13 @@ namespace ANTLR_Test.Classes
             }
         }
 
-        private bool checkIfErrorContainedInList(List<Tuple<ErrorType, string>> list, ErrorType type, string specifier)
+        private bool checkIfErrorContainedInList(List<Error> list, ErrorType type, string specifier)
         {
-            if(list.Contains(new Tuple<ErrorType, string>(type, "*")))
+            if(list.Contains(new Error(type, "*")))
             {
                 return true;
             }
-            else if (list.Contains(new Tuple<ErrorType, string>(type, specifier)))
+            else if (list.Contains(new Error(type, specifier)))
             {
                 return true;
             }

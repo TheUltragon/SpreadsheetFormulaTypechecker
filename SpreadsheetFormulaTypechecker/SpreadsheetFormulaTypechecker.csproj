@@ -108,7 +108,13 @@
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>ANTLR_Test</CustomToolNamespace>
     </Antlr4>
-    <None Include="Data\Handmade Examples\Handmade Example 1.xlsx">
+    <None Include="Data\Handmade Examples\act3_lab23_posey.xls">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\Handmade Example 1.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Data\Handmade Examples\Backup\pl_student2002.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
@@ -174,7 +180,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Data\Handmade Examples\Backup\" />
     <Folder Include="Data\Handmade Examples\Problematic\" />
   </ItemGroup>
   <ItemGroup>

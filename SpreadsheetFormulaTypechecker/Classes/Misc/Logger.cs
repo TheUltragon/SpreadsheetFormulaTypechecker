@@ -39,7 +39,7 @@ namespace ANTLR_Test.Classes
         {
             if (Active)
             {
-                if(MinLevelToConsole <= level)
+                if(MinLevelToConsole <= level || level < 0)
                 {
                     Console.Write(text);
                     if (!string.IsNullOrEmpty(OutputFilePath))
