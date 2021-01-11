@@ -35,20 +35,27 @@ namespace ResultsHandler
 
         static void Main(string[] args)
         {
+            string path = GetLogDirectoryFromUser();
+
             List<string> files = new List<string>();
-            if (Directory.Exists(ResultsInputPath))
+            if (Directory.Exists(path))
             {
-                files.AddRange(Directory.EnumerateFiles(ResultsInputPath));
+                files.AddRange(Directory.EnumerateFiles(path));
             }
-            if (Directory.Exists(ResultsInputPath2))
+
+            if(files.Count == 0)
             {
-                files.AddRange(Directory.EnumerateFiles(ResultsInputPath2));
+                Console.WriteLine($"No logs found. Press Enter to Exit");
+                Console.ReadLine();
+                return;
             }
+
             foreach (var file in files)
             {
                 var lines = File.ReadLines(file);
                 ReadLines(lines.ToList());
             }
+
 
             int completeRecords = CountComplete(UnorderedRecords, false);
             int nonCheckedRecords = CountNonChecked(UnorderedRecords);
@@ -110,6 +117,22 @@ namespace ResultsHandler
 
             Console.WriteLine($"Press Enter to Exit");
             Console.ReadLine();
+        }
+
+        public static string GetLogDirectoryFromUser()
+        {
+            Console.WriteLine($"======================================================");
+            Console.WriteLine($"Please Input the path to the logs:");
+            while (true)
+            {
+                string path = Console.ReadLine();
+                if (Directory.Exists(path))
+                {
+                    Console.WriteLine($"======================================================");
+                    return path;
+                }
+                Console.WriteLine($"Path did not lead to a directory, please input a valid path:");
+            }
         }
 
         private static Dictionary<long, List<Record>> OrderRecordsInBasketFormat(List<Record> finalRecords, int baskets, int maxCount, Func<Record, Property> propertySelector)
@@ -177,6 +200,11 @@ namespace ResultsHandler
 
         private static void WriteRecordsToFile(List<Record> records, string file, bool includeName = true)
         {
+            if(records.Count == 0)
+            {
+                Console.WriteLine($"Skipped wrting file {file}, no records present!");
+                return;
+            }
             string output = $"{records[0].CSVHeader(includeName)}\n";
             foreach (var record in records)
             {
