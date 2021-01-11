@@ -23,6 +23,7 @@ namespace ANTLR_Test
         HandmadeImport,
         ResetCorpusPath,
 
+        //For private testing, not accessible from the program
         ImportTest,
     }
     class Program
