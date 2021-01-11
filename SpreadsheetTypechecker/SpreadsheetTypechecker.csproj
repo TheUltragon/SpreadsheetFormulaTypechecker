@@ -107,10 +107,10 @@
     <None Include="Data\Handmade Examples\act3_lab23_posey.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Handmade Examples\Backup\Handmade Example 1.xlsx">
+    <None Include="Data\Handmade Examples\Unused\Handmade Example 1.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="Data\Handmade Examples\Backup\pl_student2002.xls">
+    <None Include="Data\Handmade Examples\Unused\pl_student2002.xls">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Antlr4 Include="ExcelFormula.g4">
